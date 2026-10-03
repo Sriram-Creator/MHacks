@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "hearth",
-    "slug": "hearth",
+    "name": "Savor",
+    "slug": "savor",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "hearth",
+    "scheme": "savor",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon"

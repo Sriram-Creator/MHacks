@@ -1,0 +1,36 @@
+{
+  "state": "MI",
+  "name": "Michigan",
+  "allowed": [
+    "bread",
+    "cookies",
+    "cakes (no cream cheese frosting)",
+    "fruit pies",
+    "jam",
+    "jelly",
+    "candy",
+    "honey",
+    "dried herbs",
+    "dried fruit",
+    "granola",
+    "dry mixes",
+    "roasted coffee",
+    "dried tea"
+  ],
+  "blocked": [
+    "dairy",
+    "cheese",
+    "milk",
+    "meat",
+    "seafood",
+    "pickles",
+    "salsa",
+    "sauerkraut",
+    "acidified foods",
+    "cream or custard fillings",
+    "low-acid canned goods",
+    "anything needing refrigeration"
+  ],
+  "required_label": "Made in a home kitchen that has not been inspected by the Michigan Department of Agriculture & Rural Development",
+  "special": "Buyer must be able to contact the maker before sale"
+}
