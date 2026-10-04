@@ -1,4 +1,65 @@
-import type { Conversation } from '@/components/buyer/mock-conversations';
+export type MessageAuthor = 'buyer' | 'maker';
+
+export type ChatMessage = {
+  id: string;
+  author: MessageAuthor;
+  body: string;
+  sentAt: string;
+};
+
+export type Conversation = {
+  id: string;
+  makerId: string;
+  unread: boolean;
+  messages: ChatMessage[];
+};
+
+export function lastMessage(conversation: Conversation) {
+  return conversation.messages[conversation.messages.length - 1];
+}
+
+function clockTime(iso: string) {
+  return new Date(iso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+function startOfDay(value: Date) {
+  return new Date(value.getFullYear(), value.getMonth(), value.getDate()).getTime();
+}
+
+function dayDiff(iso: string, now: Date) {
+  return Math.round((startOfDay(now) - startOfDay(new Date(iso))) / 86_400_000);
+}
+
+export function formatInboxTime(iso: string, now = new Date()) {
+  const diff = dayDiff(iso, now);
+  if (diff <= 0) {
+    return clockTime(iso);
+  }
+  if (diff === 1) {
+    return 'Yesterday';
+  }
+  if (diff < 7) {
+    return new Date(iso).toLocaleDateString('en-US', { weekday: 'short' });
+  }
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+export function formatBubbleTime(iso: string, now = new Date()) {
+  const time = clockTime(iso);
+  const diff = dayDiff(iso, now);
+  if (diff <= 0) {
+    return time;
+  }
+  if (diff === 1) {
+    return `Yesterday ${time}`;
+  }
+  if (diff < 7) {
+    const weekday = new Date(iso).toLocaleDateString('en-US', { weekday: 'short' });
+    return `${weekday} ${time}`;
+  }
+  const date = new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return `${date} ${time}`;
+}
 
 export type BuyerPeer = {
   id: string;

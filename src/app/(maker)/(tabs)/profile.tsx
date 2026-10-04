@@ -19,6 +19,7 @@ const states: { value: AppState; label: string }[] = [
 
 export default function MakerProfileScreen() {
   const { mode, setMode, state, setState } = useApp();
+  console.log('[maker] Profile screen mounted, mode=', mode);
 
   return (
     <SafeAreaView className="flex-1 bg-cream" edges={['bottom']}>
@@ -38,7 +39,10 @@ export default function MakerProfileScreen() {
               return (
                 <Pressable
                   key={option.value}
-                  onPress={() => setMode(option.value)}
+                  onPress={() => {
+                    console.log('[maker] Profile setMode →', option.value);
+                    setMode(option.value);
+                  }}
                   className={`flex-1 rounded-2xl border px-4 py-3 ${
                     selected ? 'border-terracotta bg-terracotta' : 'border-savor/15 bg-cream'
                   }`}>

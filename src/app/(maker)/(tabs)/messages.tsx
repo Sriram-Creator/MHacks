@@ -13,17 +13,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ConversationRow } from '@/components/buyer/conversation-row';
+import { ConversationRow } from '@/components/maker/conversation-row';
 import {
   formatBubbleTime,
   lastMessage,
-  type ChatMessage,
-  type Conversation,
-} from '@/components/buyer/mock-conversations';
-import {
   getBuyer,
   mockMakerConversations,
   type BuyerPeer,
+  type ChatMessage,
+  type Conversation,
 } from '@/components/maker/mock-conversations';
 import { colors } from '@/constants/theme';
 
@@ -32,6 +30,8 @@ function clockIso() {
 }
 
 export default function MakerMessagesScreen() {
+  console.log('[maker] Messages screen mounted');
+
   const { buyerId } = useLocalSearchParams<{ buyerId?: string }>();
   const [readBuyerIds, setReadBuyerIds] = useState<Set<string>>(() => new Set());
   const hasBuyerParam = typeof buyerId === 'string' && buyerId.length > 0;
