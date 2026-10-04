@@ -61,7 +61,7 @@ Join our community of developers creating universal apps.
 ![tag:innovationlab](https://img.shields.io/badge/innovationlab-3D8BD3)
 ![tag:hackathon](https://img.shields.io/badge/hackathon-5F43F1)
 
-Hosted agent code: [`fetch_agent/agent.py`](fetch_agent/agent.py) (Agentverse editor). This is the only agent to use for judging, Devpost, and the ASI:One Submission Agent. Do not use `@cottage-ai`.
+Hosted agent code: [`fetch_agent/agent.py`](fetch_agent/agent.py) (Agentverse editor).
 
 - **Agent name:** michigan-cottage-compliance
 - **Handle:** `@michigan-cottage-com`
