@@ -38,6 +38,7 @@ export default function CreateAccountScreen() {
     setMode(role);
     setState(pickedState);
     signUp(email, password);
+    router.replace('/');
   }
 
   return (

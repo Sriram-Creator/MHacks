@@ -2,6 +2,10 @@ import { Stack } from 'expo-router';
 
 import { colors } from '@/constants/theme';
 
+export const unstable_settings = {
+  initialRouteName: '(tabs)',
+};
+
 export default function BuyerLayout() {
   return (
     <Stack
@@ -12,6 +16,7 @@ export default function BuyerLayout() {
         headerShadowVisible: false,
         contentStyle: { backgroundColor: colors.mint },
       }}>
+      <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="item/[id]" options={{ title: 'Item' }} />
       <Stack.Screen name="maker/[id]" options={{ title: 'Maker' }} />

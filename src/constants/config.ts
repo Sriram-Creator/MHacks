@@ -35,6 +35,6 @@ function resolveApiUrl(): string {
 }
 
 export const API_URL = resolveApiUrl();
+console.log('[api] API_URL =', API_URL);
 
-// This demo app has no auth, so both roles share a single user record.
 export const USER_ID = 'me';
