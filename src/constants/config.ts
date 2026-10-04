@@ -5,7 +5,7 @@ import Constants from 'expo-constants';
  * production-style launch). Prefer talking to the same machine that
  * is serving the Expo bundle so a physical device can reach /server.
  */
-const FALLBACK_API_URL = 'http://35.3.150.195:3001';
+const FALLBACK_API_URL = 'http://10.165.0.191:3001';
 
 /** Pull the LAN hostname out of Expo's packager URI (`192.168.1.12:8081`). */
 function metroHost(): string | undefined {
