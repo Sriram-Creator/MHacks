@@ -110,18 +110,20 @@ function Inbox({
   );
 
   return (
-    <ScrollView className="flex-1 bg-cream" contentContainerClassName="pb-6">
-      {rows.map(({ conversation, maker }) => (
-        <View key={conversation.id} className="border-b border-savor/5">
-          <ConversationRow
-            conversation={conversation}
-            maker={maker}
-            unread={conversation.unread && !readMakerIds.has(maker.id)}
-            onPress={() => onOpen(maker.id)}
-          />
-        </View>
-      ))}
-    </ScrollView>
+    <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
+      <ScrollView className="flex-1 bg-cream" contentContainerClassName="pb-6">
+        {rows.map(({ conversation, maker }) => (
+          <View key={conversation.id} className="border-b border-savor/5">
+            <ConversationRow
+              conversation={conversation}
+              maker={maker}
+              unread={conversation.unread && !readMakerIds.has(maker.id)}
+              onPress={() => onOpen(maker.id)}
+            />
+          </View>
+        ))}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
