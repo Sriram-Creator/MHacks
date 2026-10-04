@@ -8,6 +8,7 @@ type LabeledInputProps = {
   placeholder?: string;
   multiline?: boolean;
   keyboardType?: ComponentProps<typeof TextInput>['keyboardType'];
+  autoCapitalize?: ComponentProps<typeof TextInput>['autoCapitalize'];
 };
 
 export function LabeledInput({
@@ -17,6 +18,7 @@ export function LabeledInput({
   placeholder,
   multiline,
   keyboardType,
+  autoCapitalize,
 }: LabeledInputProps) {
   return (
     <View className="mb-4">
@@ -30,6 +32,7 @@ export function LabeledInput({
         placeholderTextColor="#16301C66"
         multiline={multiline}
         keyboardType={keyboardType}
+        autoCapitalize={autoCapitalize}
         textAlignVertical={multiline ? 'top' : 'center'}
         className={`rounded-2xl bg-white px-4 text-base text-savor ${
           multiline ? 'min-h-[96px] py-3' : 'min-h-[52px]'

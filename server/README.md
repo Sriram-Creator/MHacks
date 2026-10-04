@@ -7,9 +7,16 @@ Standalone Express + TypeScript API (separate from the Expo app). Runs on **port
 ```bash
 cd server
 npm install
-cp .env.example .env   # then add your NVIDIA_API_KEY
+cp .env.example .env   # then add your NVIDIA_API_KEY and DATABASE_URL
 npm run dev
 ```
+
+## Database
+
+Data is stored in **Neon Postgres** (set `DATABASE_URL` in `.env`). On startup the
+server creates the `makers`, `items`, `meetup_spots`, and `orders` tables if they
+don't exist and seeds them from the mock data only when they're empty. `GET`/`POST`
+for items, makers, meetup-spots, and orders all read/write the database.
 
 ## Scripts
 

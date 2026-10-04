@@ -70,3 +70,13 @@ export interface Order {
   meetupSpotId: string | null;
   createdAt: string;
 }
+
+export interface User {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  bio: string;
+  photo: string;
+}

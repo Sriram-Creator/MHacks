@@ -1,33 +1,43 @@
 import { Router } from "express";
+import { getForecast, getItemById } from "../db.js";
 import type { Forecast } from "../types.js";
 
 export const forecastRouter = Router();
 
-// Mock forecast data keyed by itemId.
-const MOCK_FORECASTS: Record<string, Forecast> = {
-  default: {
-    suggested: 40,
-    sold: 38,
-    reason: "12 regulars + rainy Saturday + last 3 weeks avg 36",
-  },
-  "sourdough-01": {
-    suggested: 24,
-    sold: 22,
-    reason: "9 regulars + farmers market weekend + last 3 weeks avg 20",
-  },
-  "cookies-02": {
-    suggested: 60,
-    sold: 57,
-    reason: "holiday demand + 15 pre-orders + last 3 weeks avg 52",
-  },
+// Fallback when neither a stored forecast nor a matching item exists.
+const DEFAULT_FORECAST: Forecast = {
+  suggested: 0,
+  sold: 0,
+  reason: "No forecast yet — list a few weeks to build history.",
 };
 
 /**
  * GET /forecast/:itemId
- * Returns mock sales forecast data.
+ * Returns the item's stored forecast. For items without one (e.g. just
+ * published), derives a forecast from the item's current capacity.
  */
-forecastRouter.get("/:itemId", (req, res) => {
+forecastRouter.get("/:itemId", async (req, res) => {
   const { itemId } = req.params;
-  const forecast = MOCK_FORECASTS[itemId] ?? MOCK_FORECASTS.default;
-  return res.json(forecast);
+
+  try {
+    const stored = await getForecast(itemId);
+    if (stored) {
+      return res.json(stored);
+    }
+
+    const item = await getItemById(itemId);
+    if (item) {
+      return res.json({
+        suggested: item.left_this_week,
+        sold: 0,
+        reason: `new listing — suggested from your capacity of ${item.left_this_week} this week`,
+      } satisfies Forecast);
+    }
+
+    return res.json(DEFAULT_FORECAST);
+  } catch (err) {
+    return res
+      .status(500)
+      .json({ error: err instanceof Error ? err.message : "DB error" });
+  }
 });
