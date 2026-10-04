@@ -1,5 +1,4 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { Image } from 'expo-image';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import {
@@ -110,10 +109,13 @@ function Inbox({
   );
 
   return (
-    <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
-      <ScrollView className="flex-1 bg-cream" contentContainerClassName="pb-6">
+    <SafeAreaView className="flex-1 bg-mint" edges={['top']}>
+      <Text className="px-5 pb-2 pt-3 text-center text-[28px] font-semibold text-cocoa">
+        Messages
+      </Text>
+      <ScrollView className="flex-1" contentContainerClassName="pb-6">
         {rows.map(({ conversation, maker }) => (
-          <View key={conversation.id} className="border-b border-savor/5">
+          <View key={conversation.id}>
             <ConversationRow
               conversation={conversation}
               name={maker.name}
@@ -159,27 +161,31 @@ function MakerChat({
     });
   }
 
+  const firstName = maker.name.split(' ')[0];
+
   return (
-    <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-mint" edges={['top']}>
       <KeyboardAvoidingView
         className="flex-1"
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={8}>
-        <View className="flex-row items-center border-b border-savor/5 px-5 py-3">
+        <View className="flex-row items-center px-4 py-3">
           <Pressable
             onPress={onBack}
             accessibilityRole="button"
             accessibilityLabel="Back to inbox"
             hitSlop={8}
-            className="-ml-2 mr-1 h-10 w-10 items-center justify-center">
-            <Ionicons name="chevron-back" size={24} color={colors.dark} />
+            className="h-10 w-10 items-center justify-center">
+            <Ionicons name="arrow-back" size={22} color={colors.cocoa} />
           </Pressable>
-          <Image source={maker.photo} contentFit="cover" className="h-10 w-10 rounded-full" />
-          <View className="ml-3 flex-1">
-            <Text className="text-base font-semibold text-savor">{maker.name}</Text>
-            <Text className="text-xs text-savor/40">Usually replies in 10 min</Text>
+          <Text
+            numberOfLines={1}
+            className="flex-1 text-center text-[22px] font-semibold text-cocoa">
+            {maker.name}
+          </Text>
+          <View className="h-10 w-10 items-center justify-center rounded-full bg-white">
+            <Text className="text-[16px] font-semibold text-cocoa">{maker.name.charAt(0)}</Text>
           </View>
-          <Ionicons name="call-outline" size={20} color={colors.dark} />
         </View>
 
         <LawBanner />
@@ -191,19 +197,25 @@ function MakerChat({
           keyboardShouldPersistTaps="handled"
           keyboardDismissMode="none"
           onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}>
+          <Text className="mb-5 text-center text-[13px] text-cocoa/40">
+            {new Date().toLocaleDateString('en-US', {
+              weekday: 'long',
+              month: 'short',
+              day: 'numeric',
+            })}
+          </Text>
           {thread.map((message) => {
             const mine = message.from === 'buyer';
             return (
               <View key={message.id} className={`mb-3 ${mine ? 'items-end' : 'items-start'}`}>
                 <View
                   className={`max-w-[80%] rounded-[22px] px-4 py-3 ${
-                    mine ? 'bg-savor' : 'bg-[#EEE8DE]'
+                    mine ? 'bg-savor' : 'bg-white'
                   }`}>
-                  <Text className={`text-base leading-6 ${mine ? 'text-cream' : 'text-savor'}`}>
+                  <Text className={`text-[16px] leading-6 ${mine ? 'text-mint' : 'text-cocoa'}`}>
                     {message.text}
                   </Text>
                 </View>
-                <Text className="mt-1 text-xs text-savor/35">{message.time}</Text>
               </View>
             );
           })}
@@ -214,8 +226,8 @@ function MakerChat({
             ref={inputRef}
             value={draft}
             onChangeText={setDraft}
-            placeholder="Message…"
-            placeholderTextColor="#7A8678"
+            placeholder={`Message ${firstName}`}
+            placeholderTextColor="#B0A89C"
             editable
             autoCorrect
             blurOnSubmit={false}
@@ -223,27 +235,27 @@ function MakerChat({
             onSubmitEditing={send}
             style={{
               flex: 1,
-              minHeight: 48,
+              minHeight: 52,
               borderRadius: 999,
               backgroundColor: '#FFFFFF',
               paddingHorizontal: 18,
               paddingVertical: 12,
               fontSize: 16,
-              color: colors.dark,
+              color: colors.cocoa,
             }}
           />
           <Pressable
             onPress={send}
             disabled={!canSend}
             style={{
-              height: 48,
-              width: 48,
-              borderRadius: 24,
+              height: 52,
+              width: 52,
+              borderRadius: 26,
               alignItems: 'center',
               justifyContent: 'center',
               backgroundColor: canSend ? colors.dark : '#C8D0C4',
             }}>
-            <Ionicons name="arrow-forward" size={18} color={colors.cream} />
+            <Ionicons name="paper-plane" size={18} color={colors.mint} />
           </Pressable>
         </View>
       </KeyboardAvoidingView>

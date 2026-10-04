@@ -19,7 +19,14 @@ export default function BuyerLayout() {
       <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="item/[id]" options={{ title: 'Item' }} />
-      <Stack.Screen name="maker/[id]" options={{ title: 'Maker' }} />
+      <Stack.Screen
+        name="maker/[id]"
+        options={{
+          title: 'Maker',
+          headerTitleAlign: 'center',
+          headerTitleStyle: { fontWeight: '600', fontSize: 28, color: colors.cocoa },
+        }}
+      />
       <Stack.Screen
         name="checkout"
         options={{
