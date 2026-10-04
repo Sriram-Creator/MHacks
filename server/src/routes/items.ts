@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { randomUUID } from "node:crypto";
-import { items } from "../store.js";
+import { insertItem, listItems } from "../db.js";
 import type { Item } from "../types.js";
 
 export const itemsRouter = Router();
@@ -9,8 +9,12 @@ export const itemsRouter = Router();
  * GET /items
  * Returns all marketplace items.
  */
-itemsRouter.get("/", (_req, res) => {
-  res.json(items);
+itemsRouter.get("/", async (_req, res) => {
+  try {
+    res.json(await listItems());
+  } catch (err) {
+    res.status(500).json({ error: err instanceof Error ? err.message : "DB error" });
+  }
 });
 
 /**
@@ -19,9 +23,9 @@ itemsRouter.get("/", (_req, res) => {
  *   name, category, description?, price, ingredients[]?, allergens[]?,
  *   left_this_week?, capacity?, maker?, makerId?, photo?
  * }
- * Pushes a new item to the in-memory array and returns the created item.
+ * Inserts a new item and returns the created item.
  */
-itemsRouter.post("/", (req, res) => {
+itemsRouter.post("/", async (req, res) => {
   const body = req.body ?? {};
 
   const name = typeof body.name === "string" ? body.name.trim() : "";
@@ -57,7 +61,12 @@ itemsRouter.post("/", (req, res) => {
     photo: typeof body.photo === "string" ? body.photo : "",
   };
 
-  items.push(item);
-
-  return res.status(201).json(item);
+  try {
+    const created = await insertItem(item);
+    return res.status(201).json(created);
+  } catch (err) {
+    return res
+      .status(500)
+      .json({ error: err instanceof Error ? err.message : "DB error" });
+  }
 });

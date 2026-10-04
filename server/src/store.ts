@@ -1,9 +1,8 @@
-import type { Item, Maker, MeetupSpot, Order } from "./types.js";
+import type { Item, Maker, MeetupSpot } from "./types.js";
 
 /**
- * In-memory data store for the demo. Items are mutable (left_this_week is
- * decremented when orders are placed) and orders accumulate in a plain array.
- * Everything resets when the server restarts.
+ * Seed data used to populate the database on first run (when the tables are
+ * empty). After seeding, the database is the source of truth.
  */
 
 export const makers: Maker[] = [
@@ -145,12 +144,3 @@ export const meetupSpots: MeetupSpot[] = [
   },
 ];
 
-export const orders: Order[] = [];
-
-export function findItem(id: string): Item | undefined {
-  return items.find((i) => i.id === id);
-}
-
-export function findSpot(id: string): MeetupSpot | undefined {
-  return meetupSpots.find((s) => s.id === id);
-}

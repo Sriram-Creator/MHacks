@@ -2,6 +2,7 @@ import "dotenv/config";
 import { networkInterfaces } from "node:os";
 import express from "express";
 import cors from "cors";
+import { initDb } from "./db.js";
 import { aiRouter } from "./routes/ai.js";
 import { forecastRouter } from "./routes/forecast.js";
 import { itemsRouter } from "./routes/items.js";
@@ -42,15 +43,22 @@ app.use("/makers", makersRouter);
 app.use("/meetup-spots", meetupSpotsRouter);
 app.use("/orders", ordersRouter);
 
-app.listen(PORT, HOST, () => {
-  const { mock, reason } = isMockMode();
-  const lan = getLanAddress();
-  console.log(`Server listening on http://${HOST}:${PORT}`);
-  console.log(`  local:   http://localhost:${PORT}`);
-  if (lan) {
-    console.log(`  network: http://${lan}:${PORT}  (use this on other devices)`);
-  }
-  console.log(
-    `[AI] ${mock ? "MOCK" : "LIVE"} mode (${reason}) — POST /ai/listing`,
-  );
-});
+initDb()
+  .then(() => {
+    app.listen(PORT, HOST, () => {
+      const { mock, reason } = isMockMode();
+      const lan = getLanAddress();
+      console.log(`Server listening on http://${HOST}:${PORT}`);
+      console.log(`  local:   http://localhost:${PORT}`);
+      if (lan) {
+        console.log(`  network: http://${lan}:${PORT}  (use this on other devices)`);
+      }
+      console.log(
+        `[AI] ${mock ? "MOCK" : "LIVE"} mode (${reason}) — POST /ai/listing`,
+      );
+    });
+  })
+  .catch((err: unknown) => {
+    console.error("[db] Failed to initialize database:", err);
+    process.exit(1);
+  });
