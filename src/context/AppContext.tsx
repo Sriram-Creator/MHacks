@@ -1,4 +1,12 @@
-import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+
+import {
+  lastWeekBox,
+  mockOrders,
+  type BoxCadence,
+  type Order,
+  type PickupWindow,
+} from '@/data/mock';
 
 export type AppMode = 'buyer' | 'maker';
 export type AppState = 'MI' | 'WY';
@@ -15,6 +23,13 @@ type AppContextValue = {
   setState: (state: AppState) => void;
   boxItems: BoxItem[];
   setBoxItems: (items: BoxItem[] | ((prev: BoxItem[]) => BoxItem[])) => void;
+  boxCadence: BoxCadence;
+  setBoxCadence: (cadence: BoxCadence) => void;
+  addToBox: (itemId: string) => void;
+  updateBoxQuantity: (itemId: string, quantity: number) => void;
+  repeatLastWeek: () => void;
+  orders: Order[];
+  placeOrder: (spotId: string, window: PickupWindow, total: number) => Order;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -23,10 +38,79 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<AppMode>('buyer');
   const [state, setState] = useState<AppState>('MI');
   const [boxItems, setBoxItems] = useState<BoxItem[]>([]);
+  const [boxCadence, setBoxCadence] = useState<BoxCadence>('one-time');
+  const [orders, setOrders] = useState<Order[]>(mockOrders);
+
+  const addToBox = useCallback((itemId: string) => {
+    setBoxItems((prev) => {
+      const existing = prev.find((line) => line.itemId === itemId);
+      if (existing) {
+        return prev.map((line) =>
+          line.itemId === itemId ? { ...line, quantity: line.quantity + 1 } : line,
+        );
+      }
+      return [...prev, { itemId, quantity: 1 }];
+    });
+  }, []);
+
+  const updateBoxQuantity = useCallback((itemId: string, quantity: number) => {
+    setBoxItems((prev) => {
+      if (quantity < 1) {
+        return prev.filter((line) => line.itemId !== itemId);
+      }
+      return prev.map((line) => (line.itemId === itemId ? { ...line, quantity } : line));
+    });
+  }, []);
+
+  const repeatLastWeek = useCallback(() => {
+    setBoxItems(lastWeekBox.map((line) => ({ ...line })));
+  }, []);
+
+  const placeOrder = useCallback(
+    (spotId: string, window: PickupWindow, total: number) => {
+      const order: Order = {
+        id: `order-${Date.now()}`,
+        status: 'Confirmed',
+        items: boxItems.map((line) => ({ ...line })),
+        spotId,
+        window,
+        cadence: boxCadence,
+        total,
+      };
+      setOrders((prev) => [order, ...prev]);
+      setBoxItems([]);
+      return order;
+    },
+    [boxCadence, boxItems],
+  );
 
   const value = useMemo(
-    () => ({ mode, setMode, state, setState, boxItems, setBoxItems }),
-    [mode, state, boxItems],
+    () => ({
+      mode,
+      setMode,
+      state,
+      setState,
+      boxItems,
+      setBoxItems,
+      boxCadence,
+      setBoxCadence,
+      addToBox,
+      updateBoxQuantity,
+      repeatLastWeek,
+      orders,
+      placeOrder,
+    }),
+    [
+      mode,
+      state,
+      boxItems,
+      boxCadence,
+      addToBox,
+      updateBoxQuantity,
+      repeatLastWeek,
+      orders,
+      placeOrder,
+    ],
   );
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;
