@@ -7,17 +7,19 @@ type QuantityStepperProps = {
 
 export function QuantityStepper({ quantity, onChange }: QuantityStepperProps) {
   return (
-    <View className="flex-row items-center gap-2">
+    <View className="h-10 flex-row items-center rounded-full bg-white px-1">
       <Pressable
         onPress={() => onChange(quantity - 1)}
-        className="h-11 w-11 items-center justify-center rounded-full bg-cream">
-        <Text className="text-2xl leading-7 text-savor">−</Text>
+        className="h-9 w-9 items-center justify-center">
+        <Text className="text-xl leading-6 text-cocoa">−</Text>
       </Pressable>
-      <Text className="min-w-[28px] text-center text-lg font-semibold text-savor">{quantity}</Text>
+      <Text className="min-w-[22px] text-center text-[16px] font-medium text-cocoa">
+        {quantity}
+      </Text>
       <Pressable
         onPress={() => onChange(quantity + 1)}
-        className="h-11 w-11 items-center justify-center rounded-full bg-terracotta">
-        <Text className="text-2xl leading-7 text-cream">+</Text>
+        className="h-9 w-9 items-center justify-center">
+        <Text className="text-xl leading-6 text-cocoa">+</Text>
       </Pressable>
     </View>
   );

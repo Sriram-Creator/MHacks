@@ -11,6 +11,8 @@ module.exports = {
         savor: '#16301C',
         gold: '#D4A017',
         map: '#E6EEE3',
+        mint: '#F2F6F1',
+        cocoa: '#5C4A38',
       },
       borderRadius: {
         card: '1rem',
