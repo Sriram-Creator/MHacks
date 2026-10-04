@@ -54,25 +54,40 @@ export default function CheckoutScreen() {
   return (
     <View className="flex-1 bg-mint">
       <ScrollView contentContainerClassName="px-5 pb-36 pt-2">
-        <Text className="text-[18px] font-semibold text-cocoa">Pickup spot</Text>
-        <View className="mt-3 gap-3">
+        <View className="gap-3">
           {meetupSpots.map((spot) => {
             const selected = spotId === spot.id;
             return (
               <Pressable
                 key={spot.id}
                 onPress={() => setSpotId(spot.id)}
-                className="min-h-[56px] flex-row items-center rounded-full bg-white px-4">
+                className="min-h-[64px] flex-row items-center rounded-full bg-white px-5">
                 <Ionicons name="location-outline" size={18} color={colors.cocoa} />
                 <Text className="ml-3 flex-1 text-[15px] text-cocoa" numberOfLines={2}>
                   {spot.name}
                 </Text>
                 {selected ? (
-                  <Ionicons name="heart" size={18} color={colors.cocoa} />
+                  <Ionicons name="checkmark" size={18} color={colors.sage} />
                 ) : null}
+                <View className="ml-2 h-8 w-8 items-center justify-center rounded-full bg-mint">
+                  <Ionicons
+                    name={selected ? 'heart' : 'heart-outline'}
+                    size={16}
+                    color={selected ? colors.sage : '#C5D0C4'}
+                  />
+                </View>
               </Pressable>
             );
           })}
+        </View>
+
+        <View className="mt-3 min-h-[64px] flex-row items-center">
+          <View className="min-h-[64px] flex-1 justify-center rounded-full bg-white px-5">
+            <Text className="text-[15px] text-cocoa/35">Add a public meetup spot</Text>
+          </View>
+          <View className="-ml-2 h-14 w-14 items-center justify-center rounded-full bg-savor">
+            <Ionicons name="add" size={26} color={colors.mint} />
+          </View>
         </View>
 
         <Text className="mt-8 text-[18px] font-semibold text-cocoa">Pickup time</Text>
