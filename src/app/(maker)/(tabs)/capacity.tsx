@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { PrimaryButton } from '@/components/buyer/primary-button';
+import { ErrorRetry } from '@/components/error-retry';
 import { CapacityCard } from '@/components/maker/capacity-card';
 import { PrepSheetModal, type PrepLine } from '@/components/maker/prep-sheet-modal';
 import { colors } from '@/constants/theme';
@@ -38,17 +40,20 @@ export default function CapacityScreen() {
         return next;
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load capacity.');
+      const message = err instanceof Error ? err.message : 'Could not load capacity.';
+      console.log('[capacity] load failed:', message);
+      console.error('[capacity] load failed:', err);
+      setError(message);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    // Fetch once on mount; load() only sets state after awaiting the network.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    load();
-  }, [load]);
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   const prepLines = useMemo<PrepLine[]>(
     () =>
@@ -60,7 +65,7 @@ export default function CapacityScreen() {
     [rows, capacities],
   );
 
-  if (loading) {
+  if (loading && !error) {
     return (
       <View className="flex-1 items-center justify-center bg-cream">
         <ActivityIndicator size="large" color={colors.terracotta} />
@@ -80,9 +85,15 @@ export default function CapacityScreen() {
         </Text>
 
         {error ? (
-          <View className="mt-6 rounded-2xl bg-white p-5">
-            <Text className="text-base font-semibold text-terracotta">Couldn&apos;t load</Text>
-            <Text className="mt-1 text-sm text-savor/70">{error}</Text>
+          <View className="mt-6">
+            <ErrorRetry
+              title="Couldn't load capacity"
+              message={error}
+              onRetry={() => {
+                setLoading(true);
+                load();
+              }}
+            />
           </View>
         ) : null}
 

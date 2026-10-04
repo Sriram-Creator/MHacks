@@ -6,7 +6,7 @@ import { colors } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
 
 export const unstable_settings = {
-  initialRouteName: 'list',
+  initialRouteName: 'items',
 };
 
 function BuyerSwitch() {
