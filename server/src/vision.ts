@@ -3,7 +3,7 @@ import { mockListing } from "./mock.js";
 
 const SYSTEM_PROMPT = `You are an assistant for a cottage-food marketplace. You look at a photo of a homemade food item and produce a marketplace listing.
 
-Respond with ONLY a JSON object (no markdown, no prose) with exactly these keys:
+Respond with ONLY a JSON object (no markdown, no prose, no code fences) with exactly these keys:
 {
   "name": string,              // short product name
   "category": string,          // e.g. "baked goods", "jam", "candy", "pickles"
@@ -13,6 +13,10 @@ Respond with ONLY a JSON object (no markdown, no prose) with exactly these keys:
   "allergens": string[]        // common allergens present (e.g. "wheat", "eggs", "dairy", "nuts")
 }`;
 
+const NVIDIA_BASE_URL =
+  process.env.NVIDIA_BASE_URL ?? "https://integrate.api.nvidia.com/v1";
+const DEFAULT_MODEL = "meta/llama-3.2-11b-vision-instruct";
+
 export interface GenerateListingInput {
   image?: string;
   state: string;
@@ -20,26 +24,25 @@ export interface GenerateListingInput {
 }
 
 /**
- * Decides whether we run the real Gemini call or return a mock listing.
- * Mock mode is active when MOCK_AI=true or no GEMINI_API_KEY is configured.
+ * Decides whether we run the real NVIDIA NIM call or return a mock listing.
+ * Mock mode is active when MOCK_AI=true or no NVIDIA_API_KEY is configured.
  */
 export function isMockMode(): { mock: boolean; reason: string } {
   if (process.env.MOCK_AI === "true") {
     return { mock: true, reason: "MOCK_AI=true" };
   }
-  if (!process.env.GEMINI_API_KEY) {
-    return { mock: true, reason: "GEMINI_API_KEY not set" };
+  if (!process.env.NVIDIA_API_KEY) {
+    return { mock: true, reason: "NVIDIA_API_KEY not set" };
   }
-  return { mock: false, reason: "GEMINI_API_KEY present" };
+  return { mock: false, reason: "NVIDIA_API_KEY present" };
 }
 
-function splitDataUrl(image: string): { mimeType: string; data: string } {
+function toDataUrl(image: string): string {
   // Accept either a raw base64 string or a full data URL.
-  const match = /^data:(.+?);base64,(.*)$/s.exec(image);
-  if (match) {
-    return { mimeType: match[1], data: match[2] };
+  if (image.startsWith("data:")) {
+    return image;
   }
-  return { mimeType: "image/jpeg", data: image };
+  return `data:image/jpeg;base64,${image}`;
 }
 
 function coerceListing(obj: Record<string, unknown>): Listing {
@@ -59,10 +62,31 @@ function coerceListing(obj: Record<string, unknown>): Listing {
 }
 
 /**
+ * Parses the model's text output into an object, tolerating markdown code
+ * fences or surrounding prose by extracting the first JSON object.
+ */
+function parseJsonLoose(content: string): Record<string, unknown> {
+  const cleaned = content
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "");
+
+  try {
+    return JSON.parse(cleaned);
+  } catch {
+    const match = /\{[\s\S]*\}/.exec(cleaned);
+    if (match) {
+      return JSON.parse(match[0]);
+    }
+    throw new Error(`Model did not return valid JSON: ${content}`);
+  }
+}
+
+/**
  * Produces a structured listing for an item.
  *
  * - In MOCK mode: returns a realistic hardcoded listing based on `hint`.
- * - In LIVE mode: sends the image to the Gemini vision API.
+ * - In LIVE mode: sends the image to NVIDIA NIM's OpenAI-compatible vision API.
  *
  * Logs clearly which mode is active either way.
  */
@@ -81,52 +105,54 @@ export async function generateListing(
     throw new Error("Missing required field: image (base64 string).");
   }
 
-  const apiKey = process.env.GEMINI_API_KEY as string;
-  const model = process.env.GEMINI_MODEL ?? "gemini-1.5-flash";
-  console.log(`[AI] LIVE mode active (Gemini ${model})`);
+  const apiKey = process.env.NVIDIA_API_KEY as string;
+  const model = process.env.NVIDIA_MODEL ?? DEFAULT_MODEL;
+  console.log(`[AI] LIVE mode active (NVIDIA NIM ${model})`);
 
-  const { mimeType, data } = splitDataUrl(image);
+  const dataUrl = toDataUrl(image);
 
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-
-  const res = await fetch(url, {
+  const res = await fetch(`${NVIDIA_BASE_URL}/chat/completions`, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${apiKey}`,
+      Accept: "application/json",
+    },
     body: JSON.stringify({
-      contents: [
+      model,
+      max_tokens: 512,
+      temperature: 0.2,
+      top_p: 0.7,
+      // Only user-role messages support content arrays on NVIDIA NIM;
+      // system/assistant roles must use plain string content.
+      messages: [
+        { role: "system", content: SYSTEM_PROMPT },
         {
           role: "user",
-          parts: [
+          content: [
             {
-              text: `${SYSTEM_PROMPT}\n\nThis homemade food will be sold in ${state}. Analyze the photo and produce the listing JSON.`,
+              type: "text",
+              text: `This homemade food will be sold in ${state}. Analyze the photo and produce the listing JSON.`,
             },
-            { inline_data: { mime_type: mimeType, data } },
+            { type: "image_url", image_url: { url: dataUrl } },
           ],
         },
       ],
-      generationConfig: { responseMimeType: "application/json" },
     }),
   });
 
   if (!res.ok) {
     const detail = await res.text().catch(() => "");
-    throw new Error(`Gemini request failed (${res.status}): ${detail}`);
+    throw new Error(`NVIDIA NIM request failed (${res.status}): ${detail}`);
   }
 
   const body = (await res.json()) as {
-    candidates?: { content?: { parts?: { text?: string }[] } }[];
+    choices?: { message?: { content?: string } }[];
   };
-  const content = body.candidates?.[0]?.content?.parts?.[0]?.text;
+  const content = body.choices?.[0]?.message?.content;
   if (!content) {
-    throw new Error("Gemini returned an empty response.");
+    throw new Error("NVIDIA NIM returned an empty response.");
   }
 
-  let parsed: Record<string, unknown>;
-  try {
-    parsed = JSON.parse(content);
-  } catch {
-    throw new Error(`Gemini did not return valid JSON: ${content}`);
-  }
-
-  return coerceListing(parsed);
+  return coerceListing(parseJsonLoose(content));
 }
