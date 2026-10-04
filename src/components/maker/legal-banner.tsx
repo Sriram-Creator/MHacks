@@ -1,8 +1,7 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Text, View } from 'react-native';
 
 import { colors } from '@/constants/theme';
-
-const RED = '#B3412F';
 
 type LegalBannerProps = {
   isLegal: boolean;
@@ -13,13 +12,22 @@ type LegalBannerProps = {
 export function LegalBanner({ isLegal, stateName, reason }: LegalBannerProps) {
   return (
     <View
-      className="rounded-2xl px-5 py-4"
-      style={{ backgroundColor: isLegal ? colors.sage : RED }}>
-      <Text className="text-lg font-semibold text-cream">
-        {isLegal ? `✓ Legal to sell in ${stateName}` : `✗ Not allowed in ${stateName}`}
-      </Text>
+      className={`items-center rounded-full border px-5 py-3.5 ${
+        isLegal ? 'border-cocoa/15 bg-white' : 'border-[#B3412F] bg-white'
+      }`}>
+      <View className="flex-row items-center">
+        <Ionicons
+          name={isLegal ? 'checkmark' : 'close'}
+          size={18}
+          color={isLegal ? colors.cocoa : '#B3412F'}
+        />
+        <Text
+          className={`ml-2 text-[15px] ${isLegal ? 'text-cocoa' : 'text-[#B3412F]'}`}>
+          {isLegal ? `Legal to sell in ${stateName}` : `Not allowed in ${stateName}`}
+        </Text>
+      </View>
       {!isLegal && reason ? (
-        <Text className="mt-1 text-sm leading-5 text-cream/90">{reason}</Text>
+        <Text className="mt-1 text-center text-sm leading-5 text-[#B3412F]">{reason}</Text>
       ) : null}
     </View>
   );

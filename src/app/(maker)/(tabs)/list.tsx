@@ -5,9 +5,9 @@ import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { LabeledInput } from '@/components/labeled-input';
+import { LabeledInput } from '@/components/maker/labeled-input';
 import { LegalBanner } from '@/components/maker/legal-banner';
-import { PrimaryButton } from '@/components/buyer/primary-button';
+import { PrimaryButton } from '@/components/maker/primary-button';
 import { colors } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
 import { createItem, generateListing, STATE_NAMES, type Legality } from '@/lib/api';
@@ -24,6 +24,8 @@ function splitList(value: string): string[] {
 type Phase = 'idle' | 'loading' | 'form' | 'published' | 'error';
 
 export default function MakerListScreen() {
+  console.log('[maker] List item screen mounted');
+
   const { state } = useApp();
   const stateName = STATE_NAMES[state] ?? state;
 
@@ -133,7 +135,7 @@ export default function MakerListScreen() {
   // --- Loading ---------------------------------------------------------------
   if (phase === 'loading') {
     return (
-      <SafeAreaView className="flex-1 bg-cream" edges={['bottom']}>
+      <SafeAreaView className="flex-1 bg-mint" edges={['bottom']}>
         <View className="flex-1 items-center justify-center px-6">
           {preview ? (
             <Image
@@ -142,9 +144,9 @@ export default function MakerListScreen() {
               className="h-48 w-48 rounded-[28px] bg-map"
             />
           ) : null}
-          <ActivityIndicator className="mt-8" size="large" color={colors.terracotta} />
-          <Text className="mt-4 text-xl font-semibold text-savor">Reading your product…</Text>
-          <Text className="mt-1 text-sm text-savor/55">Writing a listing and checking the rules</Text>
+          <ActivityIndicator className="mt-8" size="large" color={colors.dark} />
+          <Text className="mt-4 text-xl font-semibold text-cocoa">Reading your product…</Text>
+          <Text className="mt-1 text-sm text-cocoa/55">Writing a listing and checking the rules</Text>
         </View>
       </SafeAreaView>
     );
@@ -153,12 +155,12 @@ export default function MakerListScreen() {
   // --- Published -------------------------------------------------------------
   if (phase === 'published') {
     return (
-      <SafeAreaView className="flex-1 bg-cream" edges={['bottom']}>
+      <SafeAreaView className="flex-1 bg-mint" edges={['bottom']}>
         <View className="flex-1 items-center justify-center px-6">
-          <View className="w-full items-center rounded-2xl bg-white p-8">
+          <View className="w-full items-center rounded-[28px] bg-white p-8">
             <Ionicons name="checkmark-circle" size={56} color={colors.sage} />
-            <Text className="mt-4 text-2xl font-semibold text-savor">{name} is live</Text>
-            <Text className="mt-2 text-center text-base text-savor/60">
+            <Text className="mt-4 text-2xl font-semibold text-cocoa">{name} is live</Text>
+            <Text className="mt-2 text-center text-base text-cocoa/60">
               Buyers near you can now add it to their meetup box.
             </Text>
             <View className="mt-6 w-full">
@@ -175,46 +177,41 @@ export default function MakerListScreen() {
   const isLegal = legality?.is_legal ?? false;
 
   return (
-    <SafeAreaView className="flex-1 bg-cream" edges={['bottom']}>
-      <ScrollView contentContainerClassName="px-5 pb-10 pt-4" keyboardShouldPersistTaps="handled">
-        <Text className="text-[11px] font-semibold uppercase tracking-[1.4px] text-savor/35">
-          New listing · {stateName}
-        </Text>
-        <Text className="mt-1 text-[32px] font-semibold leading-9 text-savor">List an item</Text>
-        <Text className="mt-2 text-base leading-6 text-savor/60">
-          Snap a photo and we&apos;ll draft the listing and check if it&apos;s legal to sell.
-        </Text>
-
+    <SafeAreaView className="flex-1 bg-mint" edges={['bottom']}>
+      <ScrollView contentContainerClassName="px-5 pb-10 pt-2" keyboardShouldPersistTaps="handled">
         {preview && showForm ? (
           <Image
             source={{ uri: preview }}
             contentFit="cover"
-            className="mt-5 h-56 w-full rounded-2xl bg-map"
+            className="h-44 w-full rounded-[22px] bg-map"
           />
         ) : null}
 
         {!showForm ? (
-          <View className="mt-6 gap-3">
+          <View className="mt-4 gap-3">
+            <Text className="text-base leading-6 text-cocoa/60">
+              Snap a photo and we&apos;ll draft the listing and check if it&apos;s legal to sell.
+            </Text>
             <Pressable
               onPress={takePhoto}
-              className="min-h-[64px] flex-row items-center rounded-2xl bg-terracotta px-5">
-              <Ionicons name="camera" size={24} color={colors.cream} />
-              <Text className="ml-3 text-lg font-semibold text-cream">Take a photo</Text>
+              className="min-h-[56px] flex-row items-center justify-center rounded-full bg-savor px-5">
+              <Ionicons name="camera" size={22} color={colors.mint} />
+              <Text className="ml-3 text-lg font-semibold text-mint">Take a photo</Text>
             </Pressable>
             <Pressable
               onPress={pickFromLibrary}
-              className="min-h-[64px] flex-row items-center rounded-2xl border border-savor/15 bg-white px-5">
-              <Ionicons name="images-outline" size={24} color={colors.dark} />
-              <Text className="ml-3 text-lg font-semibold text-savor">Choose from library</Text>
+              className="min-h-[56px] flex-row items-center justify-center rounded-full bg-white px-5">
+              <Ionicons name="images-outline" size={22} color={colors.cocoa} />
+              <Text className="ml-3 text-lg font-semibold text-cocoa">Choose from library</Text>
             </Pressable>
           </View>
         ) : null}
 
         {phase === 'error' ? (
-          <View className="mt-6 rounded-2xl bg-white p-5">
+          <View className="mt-6 rounded-[22px] bg-white p-5">
             <Text className="text-base font-semibold text-terracotta">Couldn&apos;t read that</Text>
-            <Text className="mt-1 text-sm leading-5 text-savor/70">{error}</Text>
-            <Text className="mt-2 text-xs text-savor/45">
+            <Text className="mt-1 text-sm leading-5 text-cocoa/70">{error}</Text>
+            <Text className="mt-2 text-xs text-cocoa/45">
               Make sure the Savor server is running, then try again.
             </Text>
           </View>
@@ -222,20 +219,10 @@ export default function MakerListScreen() {
 
         {showForm ? (
           <View className="mt-6">
-            {legality ? (
-              <View className="mb-5">
-                <LegalBanner
-                  isLegal={isLegal}
-                  stateName={stateName}
-                  reason={legality.reason}
-                />
-              </View>
-            ) : null}
-
             <LabeledInput label="Name" value={name} onChangeText={setName} />
             <LabeledInput label="Category" value={category} onChangeText={setCategory} />
             <LabeledInput
-              label="Price (USD)"
+              label="Price"
               value={price}
               onChangeText={setPrice}
               keyboardType="decimal-pad"
@@ -257,7 +244,7 @@ export default function MakerListScreen() {
               label="Allergens"
               value={allergens}
               onChangeText={setAllergens}
-              placeholder="Comma separated"
+              placeholder="None"
             />
             <LabeledInput
               label="Quantity this week"
@@ -267,21 +254,29 @@ export default function MakerListScreen() {
               placeholder="How many you can make"
             />
 
+            {legality ? (
+              <View className="mb-4">
+                <LegalBanner
+                  isLegal={isLegal}
+                  stateName={stateName}
+                  reason={legality.reason}
+                />
+              </View>
+            ) : null}
+
             {publishError ? (
               <Text className="mb-3 text-sm font-medium text-terracotta">{publishError}</Text>
             ) : null}
 
-            <View className="mt-2">
-              <PrimaryButton
-                label={
-                  publishing ? 'Publishing…' : isLegal ? 'Publish' : 'Not allowed to publish'
-                }
-                disabled={!isLegal || publishing}
-                onPress={publish}
-              />
-            </View>
+            <PrimaryButton
+              label={
+                publishing ? 'Publishing…' : isLegal ? 'Publish' : 'Not allowed to publish'
+              }
+              disabled={!isLegal || publishing}
+              onPress={publish}
+            />
             <Pressable onPress={reset} className="mt-4 items-center py-2">
-              <Text className="text-base font-semibold text-savor/50">Start over</Text>
+              <Text className="text-base font-semibold text-cocoa/40">Start over</Text>
             </Pressable>
           </View>
         ) : null}

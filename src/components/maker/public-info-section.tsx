@@ -7,7 +7,7 @@ import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 
 import { ErrorRetry } from '@/components/error-retry';
 import { LabeledInput } from '@/components/labeled-input';
-import { PrimaryButton } from '@/components/buyer/primary-button';
+import { PrimaryButton } from '@/components/maker/primary-button';
 import { USER_ID } from '@/constants/config';
 import { colors } from '@/constants/theme';
 import { fetchUser, updateUser } from '@/lib/api';

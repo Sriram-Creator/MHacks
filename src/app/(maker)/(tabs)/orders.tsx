@@ -4,7 +4,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { formatPrice } from '@/components/buyer/format';
+import { formatPrice } from '@/components/maker/format';
 import { ErrorRetry } from '@/components/error-retry';
 import { colors } from '@/constants/theme';
 import {
@@ -28,6 +28,8 @@ function formatTime(iso: string): string {
 }
 
 export default function MakerOrdersScreen() {
+  console.log('[maker] Orders screen mounted');
+
   const [orders, setOrders] = useState<ServerOrder[]>([]);
   const [spots, setSpots] = useState<ServerMeetupSpot[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,13 +39,14 @@ export default function MakerOrdersScreen() {
   const load = useCallback(async () => {
     try {
       const [nextOrders, nextSpots] = await Promise.all([fetchOrders(), fetchMeetupSpots()]);
+      console.log('[maker] Orders fetch ok, count=', nextOrders.length);
       setOrders(nextOrders);
       setSpots(nextSpots);
       setError(null);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Could not load orders.';
-      console.log('[orders] load failed:', message);
-      console.error('[orders] load failed:', err);
+      console.log('[maker] Orders fetch failed:', message);
+      console.error('[maker] Orders fetch failed:', err);
       setError(message);
     } finally {
       setLoading(false);
