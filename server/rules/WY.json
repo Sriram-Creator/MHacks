@@ -1,0 +1,13 @@
+{
+  "state": "WY",
+  "name": "Wyoming",
+  "allowed": [
+    "pickles",
+    "most homemade foods"
+  ],
+  "blocked": [
+    "meat"
+  ],
+  "required_label": null,
+  "special": "Wyoming's Food Freedom Act allows most homemade foods sold directly to informed end consumers"
+}
