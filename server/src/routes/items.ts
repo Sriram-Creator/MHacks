@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { randomUUID } from "node:crypto";
-import { insertForecast, insertItem, listItems } from "../db.js";
+import { insertItem, listItems } from "../db.js";
 import type { Item } from "../types.js";
 
 export const itemsRouter = Router();
@@ -63,14 +63,8 @@ itemsRouter.post("/", async (req, res) => {
 
   try {
     const created = await insertItem(item);
-    // Give the new listing its own forecast derived from its capacity,
-    // instead of falling back to a shared default.
-    await insertForecast(
-      created.id,
-      created.left_this_week,
-      0,
-      `new listing — based on your capacity of ${created.left_this_week} this week`,
-    );
+    // New listings have no order history yet, so GET /forecast derives a
+    // suggestion from the item's capacity until history accrues.
     return res.status(201).json(created);
   } catch (err) {
     return res

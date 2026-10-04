@@ -69,14 +69,6 @@ function rowToOrder(r: Row): Order {
   };
 }
 
-function rowToForecast(r: Row): Forecast {
-  return {
-    suggested: Number(r.suggested),
-    sold: Number(r.sold),
-    reason: String(r.reason ?? ""),
-  };
-}
-
 function rowToUser(r: Row): User {
   return {
     id: String(r.id),
@@ -89,15 +81,22 @@ function rowToUser(r: Row): User {
   };
 }
 
-// Per-item sales forecasts seeded on first run (keyed by item id).
-// `sold` is derived as `suggested - 2` to reflect a realistic sell-through.
-const FORECAST_SEED: Record<string, { suggested: number; sold: number; reason: string }> = {
-  "item-1": { suggested: 40, sold: 38, reason: "12 regulars + rainy Saturday + last 3 weeks avg 36" },
-  "item-2": { suggested: 8, sold: 6, reason: "cherry season peak + 3 preorders already in" },
-  "item-3": { suggested: 24, sold: 22, reason: "shelf-stable, steady — last 4 weeks avg 22" },
-  "item-4": { suggested: 15, sold: 13, reason: "slow mover, 15 covers two weeks" },
-  "item-5": { suggested: 30, sold: 28, reason: "weekend spike + 2 repeat buyers" },
-  "item-6": { suggested: 18, sold: 16, reason: "steady weekday breakfast orders" },
+/**
+ * Forecast model inputs per item. `weeks` is the synthetic order-quantity
+ * history seeded into `order_history` (most recent week first). `seasonality`
+ * is the multiplier applied to the 3-week average, with a short label that
+ * explains it. Forecasts are computed from these inputs, not hardcoded.
+ */
+const FORECAST_MODEL: Record<
+  string,
+  { weeks: [number, number, number]; seasonality: number; label: string }
+> = {
+  "item-1": { weeks: [39, 36, 34], seasonality: 1.1, label: "rainy Saturday" },
+  "item-2": { weeks: [6, 5, 4], seasonality: 1.6, label: "cherry season peak" },
+  "item-3": { weeks: [26, 24, 22], seasonality: 1.0, label: "steady, shelf-stable" },
+  "item-4": { weeks: [16, 15, 14], seasonality: 1.0, label: "slow mover" },
+  "item-5": { weeks: [26, 25, 24], seasonality: 1.2, label: "weekend spike" },
+  "item-6": { weeks: [19, 18, 17], seasonality: 1.0, label: "steady weekday breakfast" },
 };
 
 // --- Schema + seeding ------------------------------------------------------
@@ -147,11 +146,17 @@ export async function initDb(): Promise<void> {
     created_at timestamptz NOT NULL DEFAULT now()
   )`;
 
-  await sql`CREATE TABLE IF NOT EXISTS forecasts (
-    item_id text PRIMARY KEY,
-    suggested integer NOT NULL DEFAULT 0,
-    sold integer NOT NULL DEFAULT 0,
-    reason text NOT NULL DEFAULT ''
+  // Forecasts are now computed from order_history, so drop the old
+  // hardcoded forecasts table if it exists.
+  await sql`DROP TABLE IF EXISTS forecasts`;
+
+  // Synthetic weekly order-quantity history used to compute forecasts.
+  // weeks_ago: 1 = most recent completed week, 3 = oldest.
+  await sql`CREATE TABLE IF NOT EXISTS order_history (
+    item_id text NOT NULL,
+    weeks_ago integer NOT NULL,
+    quantity integer NOT NULL,
+    PRIMARY KEY (item_id, weeks_ago)
   )`;
 
   await sql`CREATE TABLE IF NOT EXISTS users (
@@ -168,7 +173,7 @@ export async function initDb(): Promise<void> {
 }
 
 async function isEmpty(
-  table: "makers" | "items" | "meetup_spots" | "forecasts",
+  table: "makers" | "items" | "meetup_spots" | "order_history",
 ): Promise<boolean> {
   // Table name can't be parameterized; it's a fixed internal literal.
   const rows =
@@ -178,7 +183,7 @@ async function isEmpty(
         ? await sql`SELECT count(*)::int AS count FROM items`
         : table === "meetup_spots"
           ? await sql`SELECT count(*)::int AS count FROM meetup_spots`
-          : await sql`SELECT count(*)::int AS count FROM forecasts`;
+          : await sql`SELECT count(*)::int AS count FROM order_history`;
   return Number((rows[0] as Row).count) === 0;
 }
 
@@ -208,13 +213,20 @@ async function seedIfEmpty(): Promise<void> {
     console.log(`[db] seeded ${seedSpots.length} meetup spots`);
   }
 
-  if (await isEmpty("forecasts")) {
-    const entries = Object.entries(FORECAST_SEED);
-    for (const [itemId, f] of entries) {
-      await sql`INSERT INTO forecasts (item_id, suggested, sold, reason)
-        VALUES (${itemId}, ${f.suggested}, ${f.sold}, ${f.reason})`;
+  if (await isEmpty("order_history")) {
+    const entries = Object.entries(FORECAST_MODEL);
+    let weekRows = 0;
+    for (const [itemId, model] of entries) {
+      // weeks[0] is the most recent week (weeks_ago = 1).
+      for (let i = 0; i < model.weeks.length; i++) {
+        await sql`INSERT INTO order_history (item_id, weeks_ago, quantity)
+          VALUES (${itemId}, ${i + 1}, ${model.weeks[i]})`;
+        weekRows++;
+      }
     }
-    console.log(`[db] seeded ${entries.length} forecasts`);
+    console.log(
+      `[db] seeded ${weekRows} order-history rows across ${entries.length} items`,
+    );
   }
 
   // Ensure the shared demo user exists (single-user app, no auth).
@@ -293,29 +305,54 @@ export async function insertItem(item: Item): Promise<Item> {
   return rowToItem((rows as Row[])[0]);
 }
 
-// --- Forecasts -------------------------------------------------------------
+// --- Forecasts (computed from order history) --------------------------------
 
-export async function getForecast(itemId: string): Promise<Forecast | undefined> {
-  const rows = await sql`SELECT * FROM forecasts WHERE item_id = ${itemId}`;
-  const row = (rows as Row[])[0];
-  return row ? rowToForecast(row) : undefined;
+/** Returns weekly order quantities for an item, ordered newest week first. */
+export async function getOrderHistory(
+  itemId: string,
+): Promise<{ weeksAgo: number; quantity: number }[]> {
+  const rows = await sql`SELECT weeks_ago, quantity FROM order_history
+    WHERE item_id = ${itemId}
+    ORDER BY weeks_ago ASC`;
+  return (rows as Row[]).map((r) => ({
+    weeksAgo: Number(r.weeks_ago),
+    quantity: Number(r.quantity),
+  }));
 }
 
-/** Inserts (or replaces) the forecast for an item. */
-export async function insertForecast(
-  itemId: string,
-  suggested: number,
-  sold: number,
-  reason: string,
-): Promise<Forecast> {
-  const rows = await sql`INSERT INTO forecasts (item_id, suggested, sold, reason)
-    VALUES (${itemId}, ${suggested}, ${sold}, ${reason})
-    ON CONFLICT (item_id) DO UPDATE SET
-      suggested = EXCLUDED.suggested,
-      sold = EXCLUDED.sold,
-      reason = EXCLUDED.reason
-    RETURNING *`;
-  return rowToForecast((rows as Row[])[0]);
+/**
+ * Computes a forecast from the last 3 weeks of order history:
+ *   suggested = round(avg(last 3 weeks) * seasonality)
+ * The `reason` string spells out the exact inputs used. Returns undefined
+ * when there's no history for the item (e.g. a brand-new listing).
+ */
+export async function computeForecast(itemId: string): Promise<Forecast | undefined> {
+  const history = await getOrderHistory(itemId);
+  if (history.length === 0) {
+    return undefined;
+  }
+
+  // Use up to the last 3 weeks of data.
+  const recent = history.slice(0, 3);
+  const quantities = recent.map((h) => h.quantity);
+  const avg = quantities.reduce((sum, q) => sum + q, 0) / quantities.length;
+
+  const model = FORECAST_MODEL[itemId];
+  const seasonality = model?.seasonality ?? 1;
+  const label = model?.label ?? "seasonal demand";
+
+  const suggested = Math.round(avg * seasonality);
+  // Most recent completed week's actual sales.
+  const sold = recent[0]?.quantity ?? 0;
+
+  // Chronological order (oldest -> newest) reads naturally in the reason.
+  const chronological = [...quantities].reverse().join(", ");
+  const avgDisplay = Math.round(avg);
+  const reason =
+    `last 3 weeks ${chronological} → avg ${avgDisplay} ` +
+    `×${seasonality.toFixed(1)} ${label} = ${suggested}`;
+
+  return { suggested, sold, reason };
 }
 
 // --- Users -----------------------------------------------------------------
