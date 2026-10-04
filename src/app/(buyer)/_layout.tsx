@@ -6,10 +6,11 @@ export default function BuyerLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: colors.cream },
-        headerTintColor: colors.dark,
+        headerStyle: { backgroundColor: colors.mint },
+        headerTintColor: colors.cocoa,
+        headerTitleStyle: { fontWeight: '600', color: colors.cocoa },
         headerShadowVisible: false,
-        contentStyle: { backgroundColor: colors.cream },
+        contentStyle: { backgroundColor: colors.mint },
       }}>
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="item/[id]" options={{ title: 'Item' }} />
