@@ -7,7 +7,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { BrandHeader } from '@/components/buyer/brand-header';
 import { Chip, ChipRow } from '@/components/buyer/chip';
 import { ItemRow } from '@/components/buyer/item-row';
-import { MakerRow } from '@/components/buyer/maker-row';
 import { RadiusMap } from '@/components/buyer/radius-map';
 import { RadiusSlider } from '@/components/buyer/radius-slider';
 import { SearchBar } from '@/components/buyer/search-bar';
@@ -21,17 +20,8 @@ const categories: { label: string; value: ItemCategory }[] = [
   { label: 'Honey', value: 'honey' },
 ];
 
-const categoryCopy: Record<ItemCategory, string> = {
-  bread: 'bread',
-  jam: 'jam',
-  granola: 'granola',
-  honey: 'honey',
-  cookies: 'sweets',
-};
-
-function makerSpecialty(makerId: string) {
-  const unique = [...new Set(getItemsByMaker(makerId).map((item) => categoryCopy[item.category]))];
-  return unique.slice(0, 2).join(' & ') || 'cottage food';
+function makerFirstName(name: string) {
+  return name.split(/[\s&]/)[0] || name;
 }
 
 export default function HomeScreen() {
@@ -89,79 +79,69 @@ export default function HomeScreen() {
   const featuredItem = featured ? getItemsByMaker(featured.id)[0] : undefined;
 
   return (
-    <View className="flex-1 bg-cream">
-      {!listView ? (
-        <View className="bg-map">
-          <SafeAreaView edges={['top']}>
-            <BrandHeader
-              searching={searching}
-              onSearchPress={() => setSearching((open) => !open)}
-            />
-            <RadiusMap makers={nearbyMakers} radius={radius} />
-          </SafeAreaView>
+    <View className="flex-1 bg-mint">
+      <SafeAreaView edges={['top']} className="bg-mint">
+        <BrandHeader
+          searching={searching}
+          onSearchPress={() => setSearching((open) => !open)}
+          radiusMiles={radius}
+        />
+        {!listView ? <RadiusMap makers={nearbyMakers} radius={radius} /> : null}
+      </SafeAreaView>
+
+      <View className="bg-mint pt-3">
+        <SearchBar value={query} onChangeText={setQuery} />
+        <View className="mt-3">
+          <ChipRow>
+            {categories.map((option) => (
+              <Chip
+                key={option.value}
+                label={option.label}
+                selected={category === option.value}
+                onPress={() =>
+                  setCategory((current) => (current === option.value ? null : option.value))
+                }
+              />
+            ))}
+          </ChipRow>
         </View>
-      ) : (
-        <SafeAreaView edges={['top']} className="bg-cream">
-          <BrandHeader
-            searching={searching}
-            onSearchPress={() => setSearching((open) => !open)}
-          />
-        </SafeAreaView>
-      )}
+      </View>
 
       {searching ? (
-        <View className="bg-cream pt-4">
-          <SearchBar value={query} onChangeText={setQuery} />
+        <View className="bg-mint px-5 pt-4">
+          <Text className="text-[11px] font-semibold uppercase tracking-[1.4px] text-cocoa/35">
+            Search radius
+          </Text>
+          <View className="mt-2 flex-row items-end justify-between">
+            <Text className="text-[40px] font-semibold leading-[44px] text-cocoa">{radius} miles</Text>
+            <Text className="mb-1 text-sm text-cocoa/40">{nearbyMakers.length} makers nearby</Text>
+          </View>
           <View className="mt-3">
-            <ChipRow>
-              {categories.map((option) => (
-                <Chip
-                  key={option.value}
-                  label={option.label}
-                  selected={category === option.value}
-                  onPress={() =>
-                    setCategory((current) => (current === option.value ? null : option.value))
-                  }
-                />
-              ))}
-            </ChipRow>
+            <RadiusSlider value={radius} onChange={setRadius} />
           </View>
         </View>
       ) : null}
 
-      <View className="bg-cream px-5 pt-5">
-        <Text className="text-[11px] font-semibold uppercase tracking-[1.4px] text-savor/35">
-          Search radius
-        </Text>
-        <View className="mt-2 flex-row items-end justify-between">
-          <Text className="text-[40px] font-semibold leading-[44px] text-savor">{radius} miles</Text>
-          <Text className="mb-1 text-sm text-savor/40">{nearbyMakers.length} makers nearby</Text>
-        </View>
-        <View className="mt-3">
-          <RadiusSlider value={radius} onChange={setRadius} />
-        </View>
-      </View>
-
       <ScrollView
-        className="flex-1 bg-cream"
+        className="flex-1 bg-mint"
         contentContainerClassName="pb-10"
         keyboardShouldPersistTaps="handled">
         {listView && featured && featuredItem ? (
           <View className="px-5 pt-4">
-            <Text className="text-[11px] font-semibold uppercase tracking-[1.4px] text-savor/35">
+            <Text className="text-[11px] font-semibold uppercase tracking-[1.4px] text-cocoa/35">
               {nearbyMakers.length} featured within {radius} miles
             </Text>
-            <Text className="mt-1 text-[34px] font-semibold leading-10 text-savor">Local makers</Text>
+            <Text className="mt-1 text-[34px] font-semibold leading-10 text-cocoa">Local makers</Text>
             <Pressable
               onPress={() => router.push({ pathname: '/maker/[id]', params: { id: featured.id } })}
               className="mt-5 overflow-hidden rounded-[28px] bg-savor">
               <Image source={featuredItem.photo} contentFit="cover" className="h-48 w-full opacity-70" />
               <View className="absolute inset-0 justify-end p-5">
-                <Text className="text-[11px] font-semibold uppercase tracking-[1.4px] text-cream/70">
+                <Text className="text-[11px] font-semibold uppercase tracking-[1.4px] text-mint/70">
                   New maker
                 </Text>
-                <Text className="mt-1 text-2xl font-semibold text-cream">{featured.name}</Text>
-                <Text className="mt-1 text-sm text-cream/80" numberOfLines={2}>
+                <Text className="mt-1 text-2xl font-semibold text-mint">{featured.name}</Text>
+                <Text className="mt-1 text-sm text-mint/80" numberOfLines={2}>
                   {featured.bio}
                 </Text>
                 <View className="mt-4 self-start rounded-full bg-gold px-4 py-2">
@@ -173,46 +153,52 @@ export default function HomeScreen() {
         ) : null}
 
         <View className="mt-6 flex-row items-end justify-between px-5">
-          <View className="flex-1 pr-4">
-            <Text className="text-[11px] font-semibold uppercase tracking-[1.4px] text-savor/35">
-              {listView ? 'Open this week' : `Within ${radius} miles`}
-            </Text>
-            <Text className="mt-1 text-[28px] font-semibold text-savor">
-              {listView ? 'Available now' : 'Makers near you'}
-            </Text>
-          </View>
+          <Text className="text-[22px] font-semibold text-cocoa">Makers near you</Text>
           <Pressable onPress={() => setListView((value) => !value)} className="py-2">
-            <Text className="text-sm text-savor/40">{listView ? 'Map view' : 'List view'}</Text>
+            <Text className="text-sm text-cocoa/40">{listView ? 'Map view' : 'List view'}</Text>
           </Pressable>
         </View>
 
-        <View className="mt-2 px-5">
-          {listView
-            ? visibleItems.map((item) => {
-                const maker = getMaker(item.maker_id);
-                if (!maker) {
-                  return null;
-                }
-                return (
-                  <ItemRow
-                    key={item.id}
-                    item={item}
-                    maker={maker}
-                    onPress={() => router.push({ pathname: '/item/[id]', params: { id: item.id } })}
-                  />
-                );
-              })
-            : nearbyMakers.map((maker) => (
-                <MakerRow
-                  key={maker.id}
-                  maker={maker}
-                  subtitle={makerSpecialty(maker.id)}
-                  onPress={() => router.push({ pathname: '/maker/[id]', params: { id: maker.id } })}
-                />
-              ))}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerClassName="px-5 pt-4">
+          {nearbyMakers.map((maker) => (
+            <Pressable
+              key={maker.id}
+              onPress={() => router.push({ pathname: '/maker/[id]', params: { id: maker.id } })}
+              className="mr-5 w-[64px] items-center">
+              <View className="h-14 w-14 items-center justify-center rounded-full bg-map">
+                <Text className="text-[18px] font-semibold text-cocoa">
+                  {maker.name.charAt(0)}
+                </Text>
+              </View>
+              <Text numberOfLines={1} className="mt-2 text-[13px] text-cocoa">
+                {makerFirstName(maker.name)}
+              </Text>
+            </Pressable>
+          ))}
+        </ScrollView>
 
-          {(listView ? visibleItems : nearbyMakers).length === 0 ? (
-            <Text className="py-6 text-base text-savor/45">
+        <View className="mt-7 px-5">
+          <Text className="mb-3 text-[22px] font-semibold text-cocoa">This week</Text>
+          {visibleItems.map((item) => {
+            const maker = getMaker(item.maker_id);
+            if (!maker) {
+              return null;
+            }
+            return (
+              <ItemRow
+                key={item.id}
+                item={item}
+                maker={maker}
+                onPress={() => router.push({ pathname: '/item/[id]', params: { id: item.id } })}
+              />
+            );
+          })}
+
+          {visibleItems.length === 0 && nearbyMakers.length === 0 ? (
+            <Text className="py-6 text-base text-cocoa/45">
               Nothing in this radius yet. Widen the search or try another category.
             </Text>
           ) : null}

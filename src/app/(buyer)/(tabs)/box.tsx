@@ -46,25 +46,20 @@ export default function BoxScreen() {
   );
 
   return (
-    <View className="flex-1 bg-cream">
+    <View className="flex-1 bg-mint">
       <ScrollView contentContainerClassName="px-5 pb-36 pt-2">
-        <Pressable
-          onPress={repeatLastWeek}
-          className="min-h-[52px] items-center justify-center rounded-2xl border border-sage bg-white">
-          <Text className="text-base font-semibold text-sage">Repeat last week</Text>
-        </Pressable>
-
-        <View className="mt-4 flex-row gap-3">
+        <View className="flex-row rounded-full bg-white p-1">
           {cadences.map((option) => {
             const selected = boxCadence === option.value;
             return (
               <Pressable
                 key={option.value}
                 onPress={() => setBoxCadence(option.value)}
-                className={`min-h-[48px] flex-1 items-center justify-center rounded-2xl border ${
-                  selected ? 'border-terracotta bg-terracotta' : 'border-savor/15 bg-white'
+                className={`min-h-[44px] flex-1 items-center justify-center rounded-full ${
+                  selected ? 'bg-savor' : 'bg-transparent'
                 }`}>
-                <Text className={`text-base font-semibold ${selected ? 'text-cream' : 'text-savor'}`}>
+                <Text
+                  className={`text-[15px] font-semibold ${selected ? 'text-mint' : 'text-cocoa'}`}>
                   {option.label}
                 </Text>
               </Pressable>
@@ -72,24 +67,34 @@ export default function BoxScreen() {
           })}
         </View>
 
+        <Pressable
+          onPress={repeatLastWeek}
+          className="mt-3 min-h-[52px] items-center justify-center rounded-full bg-white">
+          <Text className="text-[16px] font-medium text-cocoa">Repeat last week</Text>
+        </Pressable>
+
         {groups.length === 0 ? (
-          <View className="mt-6 rounded-2xl bg-white p-6">
-            <Text className="text-lg font-semibold text-savor">Your box is empty</Text>
-            <Text className="mt-2 text-base leading-6 text-savor/70">
+          <View className="mt-6 rounded-[22px] bg-white p-6">
+            <Text className="text-lg font-semibold text-cocoa">Your box is empty</Text>
+            <Text className="mt-2 text-base leading-6 text-cocoa/70">
               Add items from a few makers. Everything still picks up in one meetup.
             </Text>
           </View>
         ) : (
           groups.map((group) => (
-            <View key={group.makerId} className="mt-5 rounded-2xl bg-white p-4">
-              <Text className="text-base font-semibold text-savor">{group.makerName}</Text>
+            <View key={group.makerId} className="mt-7">
+              <Text className="text-[18px] font-semibold text-cocoa">From {group.makerName}</Text>
               {group.lines.map((line) => (
                 <View key={line.itemId} className="mt-4 flex-row items-center">
-                  <Image source={line.photo} contentFit="cover" className="h-16 w-16 rounded-xl" />
+                  <Image
+                    source={line.photo}
+                    contentFit="cover"
+                    className="h-14 w-14 rounded-[12px] bg-map"
+                  />
                   <View className="ml-3 flex-1">
-                    <Text className="text-base font-semibold text-savor">{line.name}</Text>
-                    <Text className="mt-1 text-sm text-terracotta">
-                      {formatPrice(line.price * line.quantity)}
+                    <Text className="text-[16px] font-medium text-cocoa">{line.name}</Text>
+                    <Text className="mt-0.5 text-[15px] text-cocoa/45">
+                      {formatPrice(line.price)}
                     </Text>
                   </View>
                   <QuantityStepper
@@ -103,12 +108,13 @@ export default function BoxScreen() {
         )}
       </ScrollView>
 
-      <View className="absolute bottom-0 left-0 right-0 bg-cream px-5 pb-6 pt-3">
+      <View className="absolute bottom-0 left-0 right-0 bg-mint px-5 pb-6 pt-3">
         <View className="mb-3 flex-row items-center justify-between">
-          <Text className="text-base text-savor/70">Subtotal</Text>
-          <Text className="text-xl font-semibold text-savor">{formatPrice(subtotal)}</Text>
+          <Text className="text-[16px] text-cocoa">Subtotal</Text>
+          <Text className="text-[16px] font-semibold text-cocoa">{formatPrice(subtotal)}</Text>
         </View>
         <PrimaryButton
+          variant="forest"
           label="Checkout"
           disabled={groups.length === 0}
           onPress={() => router.push('/checkout')}

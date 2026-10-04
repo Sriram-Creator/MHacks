@@ -11,10 +11,10 @@ export function Chip({ label, selected, onPress }: ChipProps) {
   return (
     <Pressable
       onPress={onPress}
-      className={`min-h-[44px] items-center justify-center rounded-full border px-4 ${
-        selected ? 'border-terracotta bg-terracotta' : 'border-savor/15 bg-white'
+      className={`h-10 items-center justify-center rounded-full border px-5 ${
+        selected ? 'border-savor bg-savor' : 'border-cocoa/10 bg-white'
       }`}>
-      <Text className={`text-base font-semibold ${selected ? 'text-cream' : 'text-savor'}`}>
+      <Text className={`text-[15px] font-medium ${selected ? 'text-mint' : 'text-cocoa'}`}>
         {label}
       </Text>
     </Pressable>

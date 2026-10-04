@@ -7,6 +7,8 @@ export const colors = {
   dark: '#16301C',
   gold: '#D4A017',
   map: '#E6EEE3',
+  mint: '#F2F6F1',
+  cocoa: '#5C4A38',
 } as const;
 
 /** Tailwind `rounded-2xl` — 1rem / 16px */
