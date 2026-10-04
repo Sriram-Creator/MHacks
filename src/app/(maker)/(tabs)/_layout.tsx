@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { router, Tabs } from 'expo-router';
-import { Pressable, Text } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 
 import { colors } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
@@ -9,17 +9,19 @@ export const unstable_settings = {
   initialRouteName: 'items',
 };
 
-function BuyerSwitch() {
-  const { setMode } = useApp();
+function ModeBadge() {
+  const { mode, setMode } = useApp();
+  const label = mode === 'maker' ? 'Maker' : 'Buyer';
 
   return (
     <Pressable
       onPress={() => {
-        console.log('[maker] Buyer mode pressed → setMode(buyer)');
-        setMode('buyer');
+        const next = mode === 'maker' ? 'buyer' : 'maker';
+        console.log('[maker] Mode badge pressed → setMode', next);
+        setMode(next);
       }}
       className="mr-4 px-2 py-1">
-      <Text className="font-semibold text-cocoa">Buyer</Text>
+      <Text className="font-semibold text-cocoa">{label}</Text>
     </Pressable>
   );
 }
@@ -46,7 +48,7 @@ export default function MakerTabsLayout() {
         headerTintColor: colors.cocoa,
         headerTitleStyle: { fontWeight: '600', fontSize: 28, color: colors.cocoa },
         headerShadowVisible: false,
-        headerRight: () => <BuyerSwitch />,
+        headerRight: () => <ModeBadge />,
         tabBarActiveTintColor: colors.mint,
         tabBarInactiveTintColor: '#C5D0C4',
         tabBarStyle: { backgroundColor: colors.dark, borderTopColor: 'transparent' },
@@ -66,7 +68,12 @@ export default function MakerTabsLayout() {
         options={{
           title: 'Items',
           tabBarLabel: 'Items',
-          headerRight: () => <NewItemButton />,
+          headerRight: () => (
+            <View className="flex-row items-center">
+              <ModeBadge />
+              <NewItemButton />
+            </View>
+          ),
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="cube-outline" color={color} size={size} />
           ),
