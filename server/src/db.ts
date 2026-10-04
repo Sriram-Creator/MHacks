@@ -4,7 +4,7 @@ import {
   makers as seedMakers,
   meetupSpots as seedSpots,
 } from "./store.js";
-import type { Item, Maker, MeetupSpot, Order } from "./types.js";
+import type { Forecast, Item, Maker, MeetupSpot, Order, User } from "./types.js";
 
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) {
@@ -69,6 +69,37 @@ function rowToOrder(r: Row): Order {
   };
 }
 
+function rowToForecast(r: Row): Forecast {
+  return {
+    suggested: Number(r.suggested),
+    sold: Number(r.sold),
+    reason: String(r.reason ?? ""),
+  };
+}
+
+function rowToUser(r: Row): User {
+  return {
+    id: String(r.id),
+    name: String(r.name ?? ""),
+    phone: String(r.phone ?? ""),
+    email: String(r.email ?? ""),
+    address: String(r.address ?? ""),
+    bio: String(r.bio ?? ""),
+    photo: String(r.photo ?? ""),
+  };
+}
+
+// Per-item sales forecasts seeded on first run (keyed by item id).
+// `sold` is derived as `suggested - 2` to reflect a realistic sell-through.
+const FORECAST_SEED: Record<string, { suggested: number; sold: number; reason: string }> = {
+  "item-1": { suggested: 40, sold: 38, reason: "12 regulars + rainy Saturday + last 3 weeks avg 36" },
+  "item-2": { suggested: 8, sold: 6, reason: "cherry season peak + 3 preorders already in" },
+  "item-3": { suggested: 24, sold: 22, reason: "shelf-stable, steady — last 4 weeks avg 22" },
+  "item-4": { suggested: 15, sold: 13, reason: "slow mover, 15 covers two weeks" },
+  "item-5": { suggested: 30, sold: 28, reason: "weekend spike + 2 repeat buyers" },
+  "item-6": { suggested: 18, sold: 16, reason: "steady weekday breakfast orders" },
+};
+
 // --- Schema + seeding ------------------------------------------------------
 
 export async function initDb(): Promise<void> {
@@ -116,17 +147,38 @@ export async function initDb(): Promise<void> {
     created_at timestamptz NOT NULL DEFAULT now()
   )`;
 
+  await sql`CREATE TABLE IF NOT EXISTS forecasts (
+    item_id text PRIMARY KEY,
+    suggested integer NOT NULL DEFAULT 0,
+    sold integer NOT NULL DEFAULT 0,
+    reason text NOT NULL DEFAULT ''
+  )`;
+
+  await sql`CREATE TABLE IF NOT EXISTS users (
+    id text PRIMARY KEY,
+    name text NOT NULL DEFAULT '',
+    phone text NOT NULL DEFAULT '',
+    email text NOT NULL DEFAULT '',
+    address text NOT NULL DEFAULT '',
+    bio text NOT NULL DEFAULT '',
+    photo text NOT NULL DEFAULT ''
+  )`;
+
   await seedIfEmpty();
 }
 
-async function isEmpty(table: "makers" | "items" | "meetup_spots"): Promise<boolean> {
+async function isEmpty(
+  table: "makers" | "items" | "meetup_spots" | "forecasts",
+): Promise<boolean> {
   // Table name can't be parameterized; it's a fixed internal literal.
   const rows =
     table === "makers"
       ? await sql`SELECT count(*)::int AS count FROM makers`
       : table === "items"
         ? await sql`SELECT count(*)::int AS count FROM items`
-        : await sql`SELECT count(*)::int AS count FROM meetup_spots`;
+        : table === "meetup_spots"
+          ? await sql`SELECT count(*)::int AS count FROM meetup_spots`
+          : await sql`SELECT count(*)::int AS count FROM forecasts`;
   return Number((rows[0] as Row).count) === 0;
 }
 
@@ -155,6 +207,18 @@ async function seedIfEmpty(): Promise<void> {
     }
     console.log(`[db] seeded ${seedSpots.length} meetup spots`);
   }
+
+  if (await isEmpty("forecasts")) {
+    const entries = Object.entries(FORECAST_SEED);
+    for (const [itemId, f] of entries) {
+      await sql`INSERT INTO forecasts (item_id, suggested, sold, reason)
+        VALUES (${itemId}, ${f.suggested}, ${f.sold}, ${f.reason})`;
+    }
+    console.log(`[db] seeded ${entries.length} forecasts`);
+  }
+
+  // Ensure the shared demo user exists (single-user app, no auth).
+  await sql`INSERT INTO users (id) VALUES ('me') ON CONFLICT (id) DO NOTHING`;
 }
 
 // --- Queries ---------------------------------------------------------------
@@ -227,4 +291,54 @@ export async function insertItem(item: Item): Promise<Item> {
       ${item.price}, ${JSON.stringify(item.allergens)}::jsonb, ${item.left_this_week}, ${item.photo})
     RETURNING *`;
   return rowToItem((rows as Row[])[0]);
+}
+
+// --- Forecasts -------------------------------------------------------------
+
+export async function getForecast(itemId: string): Promise<Forecast | undefined> {
+  const rows = await sql`SELECT * FROM forecasts WHERE item_id = ${itemId}`;
+  const row = (rows as Row[])[0];
+  return row ? rowToForecast(row) : undefined;
+}
+
+/** Inserts (or replaces) the forecast for an item. */
+export async function insertForecast(
+  itemId: string,
+  suggested: number,
+  sold: number,
+  reason: string,
+): Promise<Forecast> {
+  const rows = await sql`INSERT INTO forecasts (item_id, suggested, sold, reason)
+    VALUES (${itemId}, ${suggested}, ${sold}, ${reason})
+    ON CONFLICT (item_id) DO UPDATE SET
+      suggested = EXCLUDED.suggested,
+      sold = EXCLUDED.sold,
+      reason = EXCLUDED.reason
+    RETURNING *`;
+  return rowToForecast((rows as Row[])[0]);
+}
+
+// --- Users -----------------------------------------------------------------
+
+/** Returns the user, creating an empty row first if it doesn't exist. */
+export async function getUser(id: string): Promise<User> {
+  await sql`INSERT INTO users (id) VALUES (${id}) ON CONFLICT (id) DO NOTHING`;
+  const rows = await sql`SELECT * FROM users WHERE id = ${id}`;
+  return rowToUser((rows as Row[])[0]);
+}
+
+/** Updates only the provided fields (merged over the current row). */
+export async function updateUser(id: string, patch: Partial<User>): Promise<User> {
+  const current = await getUser(id);
+  const next = { ...current, ...patch, id };
+  const rows = await sql`UPDATE users SET
+    name = ${next.name},
+    phone = ${next.phone},
+    email = ${next.email},
+    address = ${next.address},
+    bio = ${next.bio},
+    photo = ${next.photo}
+    WHERE id = ${id}
+    RETURNING *`;
+  return rowToUser((rows as Row[])[0]);
 }

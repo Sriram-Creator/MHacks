@@ -9,6 +9,7 @@ import { itemsRouter } from "./routes/items.js";
 import { makersRouter } from "./routes/makers.js";
 import { meetupSpotsRouter } from "./routes/meetupSpots.js";
 import { ordersRouter } from "./routes/orders.js";
+import { usersRouter } from "./routes/users.js";
 import { isMockMode } from "./vision.js";
 
 const app = express();
@@ -42,6 +43,7 @@ app.use("/items", itemsRouter);
 app.use("/makers", makersRouter);
 app.use("/meetup-spots", meetupSpotsRouter);
 app.use("/orders", ordersRouter);
+app.use("/users", usersRouter);
 
 initDb()
   .then(() => {
