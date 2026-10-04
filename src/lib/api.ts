@@ -67,10 +67,52 @@ export type ServerUser = {
   photo: string;
 };
 
+/** Abort any request that takes longer than this so the UI never hangs. */
+const REQUEST_TIMEOUT_MS = 8000;
+
+console.log('[api] API_URL =', API_URL);
+
+/**
+ * Wraps fetch with a hard timeout (AbortController + Promise.race) and logs
+ * every failure — including the full URL — so network problems show up in
+ * the device console instead of leaving a spinner spinning forever.
+ */
+async function request(path: string, init?: RequestInit): Promise<Response> {
+  const url = `${API_URL}${path}`;
+  const method = init?.method ?? 'GET';
+  console.log('[api]', method, url);
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
+
+  try {
+    const timedOut = new Promise<never>((_, reject) => {
+      setTimeout(() => {
+        reject(new Error(`Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s — ${url}`));
+      }, REQUEST_TIMEOUT_MS);
+    });
+    return await Promise.race([fetch(url, { ...init, signal: controller.signal }), timedOut]);
+  } catch (err) {
+    const message =
+      err instanceof Error && err.name === 'AbortError'
+        ? `Request timed out after ${REQUEST_TIMEOUT_MS / 1000}s — ${url}`
+        : err instanceof Error
+          ? `${err.message} — ${url}`
+          : `Network request failed — ${url}`;
+    console.log('[api] request failed:', message);
+    console.error('[api] request failed:', err);
+    throw new Error(message);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 async function getJson<T>(path: string): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`);
+  const res = await request(path);
   if (!res.ok) {
-    throw new Error(`Request failed (${res.status})`);
+    const message = `Request failed (${res.status}) — ${API_URL}${path}`;
+    console.error('[api]', message);
+    throw new Error(message);
   }
   return (await res.json()) as T;
 }
@@ -92,7 +134,7 @@ export type NewItemInput = {
 
 /** Creates a new item on the server and returns the persisted record. */
 export async function createItem(input: NewItemInput): Promise<ServerItem> {
-  const res = await fetch(`${API_URL}/items`, {
+  const res = await request('/items', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(input),
@@ -138,7 +180,7 @@ export async function updateUser(
   id: string,
   patch: Partial<Omit<ServerUser, 'id'>>,
 ): Promise<ServerUser> {
-  const res = await fetch(`${API_URL}/users/${id}`, {
+  const res = await request(`/users/${id}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(patch),
@@ -172,7 +214,7 @@ export async function generateListing(
   state: string,
   hint?: string,
 ): Promise<ListingResponse> {
-  const res = await fetch(`${API_URL}/ai/listing`, {
+  const res = await request('/ai/listing', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ image: imageDataUrl, state, hint }),

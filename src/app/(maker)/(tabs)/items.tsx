@@ -5,6 +5,7 @@ import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { formatPrice } from '@/components/buyer/format';
+import { ErrorRetry } from '@/components/error-retry';
 import { colors } from '@/constants/theme';
 import { fetchItems, type ServerItem } from '@/lib/api';
 
@@ -20,7 +21,10 @@ export default function MakerItemsScreen() {
       setItems(next);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load items.');
+      const message = err instanceof Error ? err.message : 'Could not load items.';
+      console.log('[items] load failed:', message);
+      console.error('[items] load failed:', err);
+      setError(message);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -34,7 +38,7 @@ export default function MakerItemsScreen() {
     }, [load]),
   );
 
-  if (loading) {
+  if (loading && !error) {
     return (
       <View className="flex-1 items-center justify-center bg-cream">
         <ActivityIndicator size="large" color={colors.terracotta} />
@@ -62,10 +66,15 @@ export default function MakerItemsScreen() {
         <Text className="mt-1 text-[32px] font-semibold leading-9 text-savor">My items</Text>
 
         {error ? (
-          <View className="mt-6 rounded-2xl bg-white p-5">
-            <Text className="text-base font-semibold text-terracotta">Couldn&apos;t load items</Text>
-            <Text className="mt-1 text-sm text-savor/70">{error}</Text>
-            <Text className="mt-2 text-xs text-savor/45">Pull down to retry.</Text>
+          <View className="mt-6">
+            <ErrorRetry
+              title="Couldn't load items"
+              message={error}
+              onRetry={() => {
+                setLoading(true);
+                load();
+              }}
+            />
           </View>
         ) : null}
 

@@ -17,6 +17,11 @@ export type BoxItem = {
 };
 
 type AppContextValue = {
+  isAuthenticated: boolean;
+  authEmail: string | null;
+  signIn: (email: string, password: string) => void;
+  signUp: (email: string, password: string) => void;
+  signOut: () => void;
   mode: AppMode;
   setMode: (mode: AppMode) => void;
   state: AppState;
@@ -35,11 +40,25 @@ type AppContextValue = {
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  // Mock/local auth — no backend. Any non-empty credentials are accepted.
+  const [authEmail, setAuthEmail] = useState<string | null>(null);
   const [mode, setMode] = useState<AppMode>('buyer');
   const [state, setState] = useState<AppState>('MI');
   const [boxItems, setBoxItems] = useState<BoxItem[]>([]);
   const [boxCadence, setBoxCadence] = useState<BoxCadence>('one-time');
   const [orders, setOrders] = useState<Order[]>(mockOrders);
+
+  const signIn = useCallback((email: string, _password: string) => {
+    setAuthEmail(email.trim());
+  }, []);
+
+  const signUp = useCallback((email: string, _password: string) => {
+    setAuthEmail(email.trim());
+  }, []);
+
+  const signOut = useCallback(() => {
+    setAuthEmail(null);
+  }, []);
 
   const addToBox = useCallback((itemId: string) => {
     setBoxItems((prev) => {
@@ -86,6 +105,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
+      isAuthenticated: authEmail !== null,
+      authEmail,
+      signIn,
+      signUp,
+      signOut,
       mode,
       setMode,
       state,
@@ -101,6 +125,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       placeOrder,
     }),
     [
+      authEmail,
+      signIn,
+      signUp,
+      signOut,
       mode,
       state,
       boxItems,
