@@ -1,7 +1,10 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AccountSection } from '@/components/account-section';
+import { PublicInfoSection } from '@/components/maker/public-info-section';
+import { colors } from '@/constants/theme';
 import { useApp, type AppMode, type AppState } from '@/context/AppContext';
 
 const modes: { value: AppMode; label: string }[] = [
@@ -14,17 +17,17 @@ const states: { value: AppState; label: string }[] = [
   { value: 'WY', label: 'Wyoming' },
 ];
 
-export default function ProfileScreen() {
+export default function MakerProfileScreen() {
   const { mode, setMode, state, setState } = useApp();
 
   return (
-    <SafeAreaView className="flex-1 bg-cream" edges={['top']}>
+    <SafeAreaView className="flex-1 bg-cream" edges={['bottom']}>
       <ScrollView
         contentContainerClassName="px-6 pb-12 pt-4"
         keyboardShouldPersistTaps="handled">
         <Text className="text-3xl font-semibold text-savor">Profile</Text>
         <Text className="mt-2 text-base text-savor/70">
-          Switch how you use Savor and set the cottage-food state you operate in.
+          Manage your shop, contact details, and how you use Savor.
         </Text>
 
         <View className="mt-8 rounded-2xl bg-white p-5">
@@ -75,7 +78,17 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        <PublicInfoSection />
+
         <AccountSection />
+
+        <View className="mt-4 flex-row items-start rounded-2xl bg-gold/15 p-4">
+          <Ionicons name="information-circle-outline" size={20} color={colors.gold} />
+          <Text className="ml-2 flex-1 text-sm leading-5 text-savor/80">
+            Michigan cottage food law requires your name and home address on every product
+            label. Keep your account details above accurate.
+          </Text>
+        </View>
       </ScrollView>
     </SafeAreaView>
   );

@@ -57,6 +57,16 @@ export type ServerOrder = {
   createdAt: string;
 };
 
+export type ServerUser = {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  address: string;
+  bio: string;
+  photo: string;
+};
+
 async function getJson<T>(path: string): Promise<T> {
   const res = await fetch(`${API_URL}${path}`);
   if (!res.ok) {
@@ -117,6 +127,40 @@ export function fetchMeetupSpots() {
 
 export function fetchOrders() {
   return getJson<ServerOrder[]>('/orders');
+}
+
+export function fetchUser(id: string) {
+  return getJson<ServerUser>(`/users/${id}`);
+}
+
+/** Updates the provided account fields for a user and returns the record. */
+export async function updateUser(
+  id: string,
+  patch: Partial<Omit<ServerUser, 'id'>>,
+): Promise<ServerUser> {
+  const res = await fetch(`${API_URL}/users/${id}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  });
+
+  const text = await res.text();
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(text || `Request failed (${res.status})`);
+  }
+
+  if (!res.ok) {
+    const message =
+      typeof data === 'object' && data && 'error' in data
+        ? String((data as { error: unknown }).error)
+        : `Request failed (${res.status})`;
+    throw new Error(message);
+  }
+
+  return data as ServerUser;
 }
 
 /**

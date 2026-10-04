@@ -1,17 +1,17 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as ImagePicker from 'expo-image-picker';
 import { Image } from 'expo-image';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { LabeledInput } from '@/components/maker/labeled-input';
+import { LabeledInput } from '@/components/labeled-input';
 import { LegalBanner } from '@/components/maker/legal-banner';
 import { PrimaryButton } from '@/components/buyer/primary-button';
 import { colors } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
 import { createItem, generateListing, STATE_NAMES, type Legality } from '@/lib/api';
+import { toDownscaledDataUrl } from '@/lib/image';
 
 /** Splits a comma-separated string into a trimmed, non-empty list. */
 function splitList(value: string): string[] {
@@ -22,29 +22,6 @@ function splitList(value: string): string[] {
 }
 
 type Phase = 'idle' | 'loading' | 'form' | 'published' | 'error';
-
-/** Downscale to max 1024px on the longest side at JPEG quality 0.7, as base64. */
-async function toDownscaledDataUrl(asset: ImagePicker.ImagePickerAsset): Promise<string> {
-  const context = ImageManipulator.manipulate(asset.uri);
-  const longest = Math.max(asset.width ?? 0, asset.height ?? 0);
-
-  if (longest > 1024 && asset.width && asset.height) {
-    const scale = 1024 / longest;
-    context.resize({
-      width: Math.round(asset.width * scale),
-      height: Math.round(asset.height * scale),
-    });
-  }
-
-  const rendered = await context.renderAsync();
-  const result = await rendered.saveAsync({
-    format: SaveFormat.JPEG,
-    compress: 0.7,
-    base64: true,
-  });
-
-  return `data:image/jpeg;base64,${result.base64 ?? ''}`;
-}
 
 export default function MakerListScreen() {
   const { state } = useApp();
