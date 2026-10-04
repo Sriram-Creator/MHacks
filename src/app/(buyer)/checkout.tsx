@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { router } from 'expo-router';
+import Ionicons from '@expo/vector-icons/Ionicons';
 
 import { Chip, ChipRow } from '@/components/buyer/chip';
 import { formatPrice } from '@/components/buyer/format';
 import { PrimaryButton } from '@/components/buyer/primary-button';
+import { colors } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
 import {
   getItem,
@@ -31,14 +33,18 @@ export default function CheckoutScreen() {
     const window = pickupWindows.find((entry) => entry.id === confirmed.window);
 
     return (
-      <View className="flex-1 items-center justify-center bg-cream px-6">
-        <View className="w-full rounded-2xl bg-white p-6">
+      <View className="flex-1 items-center justify-center bg-mint px-6">
+        <View className="w-full rounded-[22px] bg-white p-6">
           <Text className="text-sm font-semibold uppercase tracking-wide text-sage">All set</Text>
-          <Text className="mt-3 text-2xl font-semibold text-savor">
+          <Text className="mt-3 text-2xl font-semibold text-cocoa">
             Order confirmed — pick up {window?.spoken} at {spot?.name}
           </Text>
           <View className="mt-6">
-            <PrimaryButton label="View orders" onPress={() => router.replace('/orders')} />
+            <PrimaryButton
+              variant="forest"
+              label="View orders"
+              onPress={() => router.replace('/orders')}
+            />
           </View>
         </View>
       </View>
@@ -46,28 +52,45 @@ export default function CheckoutScreen() {
   }
 
   return (
-    <View className="flex-1 bg-cream">
+    <View className="flex-1 bg-mint">
       <ScrollView contentContainerClassName="px-5 pb-36 pt-2">
-        <Text className="text-lg font-semibold text-savor">Meetup spot</Text>
-        <View className="mt-3 gap-3">
+        <View className="gap-3">
           {meetupSpots.map((spot) => {
             const selected = spotId === spot.id;
             return (
               <Pressable
                 key={spot.id}
                 onPress={() => setSpotId(spot.id)}
-                className={`rounded-2xl border p-4 ${
-                  selected ? 'border-terracotta bg-white' : 'border-transparent bg-white'
-                }`}>
-                <Text className="text-base font-semibold text-savor">{spot.name}</Text>
-                <Text className="mt-1 text-sm text-savor/60">{spot.address}</Text>
-                <Text className="mt-2 text-sm leading-5 text-savor/70">{spot.notes}</Text>
+                className="min-h-[64px] flex-row items-center rounded-full bg-white px-5">
+                <Ionicons name="location-outline" size={18} color={colors.cocoa} />
+                <Text className="ml-3 flex-1 text-[15px] text-cocoa" numberOfLines={2}>
+                  {spot.name}
+                </Text>
+                {selected ? (
+                  <Ionicons name="checkmark" size={18} color={colors.sage} />
+                ) : null}
+                <View className="ml-2 h-8 w-8 items-center justify-center rounded-full bg-mint">
+                  <Ionicons
+                    name={selected ? 'heart' : 'heart-outline'}
+                    size={16}
+                    color={selected ? colors.sage : '#C5D0C4'}
+                  />
+                </View>
               </Pressable>
             );
           })}
         </View>
 
-        <Text className="mt-7 text-lg font-semibold text-savor">Time window</Text>
+        <View className="mt-3 min-h-[64px] flex-row items-center">
+          <View className="min-h-[64px] flex-1 justify-center rounded-full bg-white px-5">
+            <Text className="text-[15px] text-cocoa/35">Add a public meetup spot</Text>
+          </View>
+          <View className="-ml-2 h-14 w-14 items-center justify-center rounded-full bg-savor">
+            <Ionicons name="add" size={26} color={colors.mint} />
+          </View>
+        </View>
+
+        <Text className="mt-8 text-[18px] font-semibold text-cocoa">Pickup time</Text>
         <View className="mt-3 -mx-5">
           <ChipRow>
             {pickupWindows.map((window) => (
@@ -82,12 +105,13 @@ export default function CheckoutScreen() {
         </View>
       </ScrollView>
 
-      <View className="absolute bottom-0 left-0 right-0 bg-cream px-5 pb-6 pt-3">
+      <View className="absolute bottom-0 left-0 right-0 bg-mint px-5 pb-6 pt-3">
         <View className="mb-3 flex-row items-center justify-between">
-          <Text className="text-base text-savor/70">Total</Text>
-          <Text className="text-xl font-semibold text-savor">{formatPrice(total)}</Text>
+          <Text className="text-[16px] text-cocoa">Total</Text>
+          <Text className="text-[16px] font-semibold text-cocoa">{formatPrice(total)}</Text>
         </View>
         <PrimaryButton
+          variant="forest"
           label="Pay"
           disabled={!spotId || boxItems.length === 0}
           onPress={() => {

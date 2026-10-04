@@ -15,14 +15,18 @@ export default function RootLayout() {
 }
 
 function RootNavigator() {
-  const { mode } = useApp();
+  const { mode, isAuthenticated } = useApp();
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
-      <Stack.Protected guard={mode === 'buyer'}>
+      <Stack.Screen name="index" />
+      <Stack.Protected guard={!isAuthenticated}>
+        <Stack.Screen name="(auth)" />
+      </Stack.Protected>
+      <Stack.Protected guard={isAuthenticated && mode === 'buyer'}>
         <Stack.Screen name="(buyer)" />
       </Stack.Protected>
-      <Stack.Protected guard={mode === 'maker'}>
+      <Stack.Protected guard={isAuthenticated && mode === 'maker'}>
         <Stack.Screen name="(maker)" />
       </Stack.Protected>
     </Stack>

@@ -4,6 +4,10 @@ import { Tabs } from 'expo-router';
 import { colors } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
 
+export const unstable_settings = {
+  initialRouteName: 'index',
+};
+
 export default function BuyerTabsLayout() {
   const { boxItems } = useApp();
   const boxCount = boxItems.reduce((sum, line) => sum + line.quantity, 0);
@@ -11,17 +15,18 @@ export default function BuyerTabsLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerStyle: { backgroundColor: colors.cream },
-        headerTintColor: colors.dark,
+        headerStyle: { backgroundColor: colors.mint },
+        headerTintColor: colors.cocoa,
+        headerTitleStyle: { fontWeight: '600', fontSize: 28, color: colors.cocoa },
         headerShadowVisible: false,
-        tabBarActiveTintColor: colors.terracotta,
-        tabBarInactiveTintColor: colors.dark,
-        tabBarStyle: { backgroundColor: colors.cream, borderTopColor: 'transparent' },
+        tabBarActiveTintColor: colors.mint,
+        tabBarInactiveTintColor: '#C5D0C4',
+        tabBarStyle: { backgroundColor: colors.dark, borderTopColor: 'transparent' },
       }}>
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Discover',
+          title: 'Home',
           headerShown: false,
           tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" color={color} size={size} />,
         }}
@@ -29,11 +34,11 @@ export default function BuyerTabsLayout() {
       <Tabs.Screen
         name="box"
         options={{
-          title: 'My box',
+          title: 'Box',
           tabBarBadge: boxCount > 0 ? boxCount : undefined,
-          tabBarBadgeStyle: { backgroundColor: colors.terracotta, color: colors.cream },
+          tabBarBadgeStyle: { backgroundColor: colors.mint, color: colors.dark },
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="cube-outline" color={color} size={size} />
+            <Ionicons name="bag-handle-outline" color={color} size={size} />
           ),
         }}
       />
@@ -42,7 +47,7 @@ export default function BuyerTabsLayout() {
         options={{
           title: 'Orders',
           tabBarIcon: ({ color, size }) => (
-            <Ionicons name="receipt-outline" color={color} size={size} />
+            <Ionicons name="clipboard-outline" color={color} size={size} />
           ),
         }}
       />

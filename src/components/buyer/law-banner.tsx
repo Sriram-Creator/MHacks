@@ -5,10 +5,10 @@ import { colors } from '@/constants/theme';
 
 export function LawBanner() {
   return (
-    <View className="flex-row items-center border-b border-savor/5 bg-[#EEE8DE] px-5 py-2.5">
-      <Ionicons name="information-circle-outline" size={16} color={colors.sage} />
-      <Text className="ml-2 flex-1 text-xs leading-4 text-savor/70">
-        Michigan law requires you to be able to contact the maker before buying.
+    <View className="mx-5 mt-3 flex-row items-start rounded-[22px] bg-white px-4 py-3">
+      <Ionicons name="information-circle-outline" size={18} color={colors.cocoa} />
+      <Text className="ml-2 flex-1 text-[13px] leading-5 text-cocoa/70">
+        Michigan law requires you to be able to contact the seller before buying.
       </Text>
     </View>
   );

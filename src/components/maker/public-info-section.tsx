@@ -1,11 +1,13 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import * as ImagePicker from 'expo-image-picker';
-import { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
 
+import { ErrorRetry } from '@/components/error-retry';
 import { LabeledInput } from '@/components/labeled-input';
-import { PrimaryButton } from '@/components/buyer/primary-button';
+import { PrimaryButton } from '@/components/maker/primary-button';
 import { USER_ID } from '@/constants/config';
 import { colors } from '@/constants/theme';
 import { fetchUser, updateUser } from '@/lib/api';
@@ -19,6 +21,7 @@ export function PublicInfoSection() {
   const [bio, setBio] = useState('');
   const [photo, setPhoto] = useState('');
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -26,21 +29,24 @@ export function PublicInfoSection() {
   const load = useCallback(async () => {
     try {
       const user = await fetchUser(USER_ID);
-      setError(null);
+      setLoadError(null);
       setBio(user.bio);
       setPhoto(user.photo);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load your profile.');
+      const message = err instanceof Error ? err.message : 'Could not load your profile.';
+      console.log('[public-info] load failed:', message);
+      console.error('[public-info] load failed:', err);
+      setLoadError(message);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    // Fetch once on mount; load() only sets state after awaiting the network.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    load();
-  }, [load]);
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   async function pickPhoto() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -66,7 +72,10 @@ export function PublicInfoSection() {
       await updateUser(USER_ID, { bio, photo });
       setSaved(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save.');
+      const message = err instanceof Error ? err.message : 'Could not save.';
+      console.log('[public-info] save failed:', message);
+      console.error('[public-info] save failed:', err);
+      setError(message);
     } finally {
       setSaving(false);
     }
@@ -79,8 +88,20 @@ export function PublicInfoSection() {
         What buyers see on your listings and shop page.
       </Text>
 
-      {loading ? (
+      {loading && !loadError ? (
         <ActivityIndicator className="mt-6" color={colors.terracotta} />
+      ) : loadError ? (
+        <View className="mt-4">
+          <ErrorRetry
+            title="Couldn't load public profile"
+            message={loadError}
+            onRetry={() => {
+              setLoadError(null);
+              setLoading(true);
+              load();
+            }}
+          />
+        </View>
       ) : (
         <View className="mt-4">
           <View className="mb-4 flex-row items-center">

@@ -9,7 +9,6 @@ type LabeledInputProps = {
   multiline?: boolean;
   keyboardType?: ComponentProps<typeof TextInput>['keyboardType'];
   autoCapitalize?: ComponentProps<typeof TextInput>['autoCapitalize'];
-  secureTextEntry?: boolean;
 };
 
 export function LabeledInput({
@@ -20,25 +19,21 @@ export function LabeledInput({
   multiline,
   keyboardType,
   autoCapitalize,
-  secureTextEntry,
 }: LabeledInputProps) {
   return (
-    <View className="mb-4">
-      <Text className="mb-1.5 text-[11px] font-semibold uppercase tracking-[1.4px] text-savor/40">
-        {label}
-      </Text>
+    <View className="mb-5">
+      <Text className="mb-2 text-[15px] text-cocoa">{label}</Text>
       <TextInput
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
-        placeholderTextColor="#16301C66"
+        placeholderTextColor="#B0A89C"
         multiline={multiline}
         keyboardType={keyboardType}
         autoCapitalize={autoCapitalize}
-        secureTextEntry={secureTextEntry}
         textAlignVertical={multiline ? 'top' : 'center'}
-        className={`rounded-2xl bg-white px-4 text-base text-savor ${
-          multiline ? 'min-h-[96px] py-3' : 'min-h-[52px]'
+        className={`bg-white px-5 text-[16px] text-cocoa ${
+          multiline ? 'min-h-[88px] rounded-[22px] py-3.5' : 'min-h-[52px] rounded-full'
         }`}
       />
     </View>

@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { Text, View } from 'react-native';
 
 import { LabeledInput } from '@/components/labeled-input';
 import { PrimaryButton } from '@/components/buyer/primary-button';
 import { USER_ID } from '@/constants/config';
-import { colors } from '@/constants/theme';
 import { fetchUser, updateUser } from '@/lib/api';
 
 type Fields = {
@@ -14,18 +14,27 @@ type Fields = {
   address: string;
 };
 
+const EMPTY_FIELDS: Fields = {
+  name: '',
+  phone: '',
+  email: '',
+  address: '',
+};
+
+function isEmptyUser(user: { name?: string; phone?: string; email?: string } | null | undefined) {
+  if (!user) {
+    return true;
+  }
+  return !user.name?.trim() && !user.phone?.trim() && !user.email?.trim();
+}
+
 /**
  * Shared account editor used by both buyer and maker profiles. Edits the
  * private contact fields (name/phone/email/address) stored on the server.
+ * Load failures never hide the form — fields stay editable with empty defaults.
  */
 export function AccountSection() {
-  const [fields, setFields] = useState<Fields>({
-    name: '',
-    phone: '',
-    email: '',
-    address: '',
-  });
-  const [loading, setLoading] = useState(true);
+  const [fields, setFields] = useState<Fields>(EMPTY_FIELDS);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -33,25 +42,39 @@ export function AccountSection() {
   const load = useCallback(async () => {
     try {
       const user = await fetchUser(USER_ID);
-      setError(null);
+      if (isEmptyUser(user)) {
+        setFields({
+          name: '',
+          phone: '',
+          email: '',
+          address: user?.address ?? '',
+        });
+        return;
+      }
       setFields({
-        name: user.name,
-        phone: user.phone,
-        email: user.email,
-        address: user.address,
+        name: user.name ?? '',
+        phone: user.phone ?? '',
+        email: user.email ?? '',
+        address: user.address ?? '',
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load your account.');
-    } finally {
-      setLoading(false);
+      const message = err instanceof Error ? err.message : 'Could not load your account.';
+      console.log('[account] load failed:', message);
+      console.error('[account] load failed:', err);
+      setFields((current) => ({
+        name: current.name || '',
+        phone: current.phone || '',
+        email: current.email || '',
+        address: current.address,
+      }));
     }
   }, []);
 
-  useEffect(() => {
-    // Fetch once on mount; load() only sets state after awaiting the network.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    load();
-  }, [load]);
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   function update(key: keyof Fields, value: string) {
     setFields((prev) => ({ ...prev, [key]: value }));
@@ -65,7 +88,10 @@ export function AccountSection() {
       await updateUser(USER_ID, fields);
       setSaved(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save.');
+      const message = err instanceof Error ? err.message : 'Could not save.';
+      console.log('[account] save failed:', message);
+      console.error('[account] save failed:', err);
+      setError(message);
     } finally {
       setSaving(false);
     }
@@ -78,53 +104,49 @@ export function AccountSection() {
         Your contact details for order handoffs.
       </Text>
 
-      {loading ? (
-        <ActivityIndicator className="mt-6" color={colors.terracotta} />
-      ) : (
-        <View className="mt-4">
-          <LabeledInput
-            label="Name"
-            value={fields.name}
-            onChangeText={(value) => update('name', value)}
-            placeholder="Your full name"
-          />
-          <LabeledInput
-            label="Phone"
-            value={fields.phone}
-            onChangeText={(value) => update('phone', value)}
-            placeholder="(734) 555-0100"
-            keyboardType="phone-pad"
-          />
-          <LabeledInput
-            label="Email"
-            value={fields.email}
-            onChangeText={(value) => update('email', value)}
-            placeholder="you@example.com"
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          <LabeledInput
-            label="Address"
-            value={fields.address}
-            onChangeText={(value) => update('address', value)}
-            placeholder="Street, City, State ZIP"
-            multiline
-          />
+      <View className="mt-4">
+        <LabeledInput
+          label="Name"
+          value={fields.name}
+          onChangeText={(value) => update('name', value)}
+          placeholder="Your full name"
+        />
+        <LabeledInput
+          label="Phone"
+          value={fields.phone}
+          onChangeText={(value) => update('phone', value)}
+          placeholder="(734) 555-0100"
+          keyboardType="phone-pad"
+        />
+        <LabeledInput
+          label="Email"
+          value={fields.email}
+          onChangeText={(value) => update('email', value)}
+          placeholder="you@example.com"
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+        <LabeledInput
+          label="Address"
+          value={fields.address}
+          onChangeText={(value) => update('address', value)}
+          placeholder="Street, City, State ZIP"
+          multiline
+        />
 
-          {error ? (
-            <Text className="mb-3 text-sm font-medium text-terracotta">{error}</Text>
-          ) : null}
-          {saved ? (
-            <Text className="mb-3 text-sm font-medium text-sage">Saved.</Text>
-          ) : null}
+        {error ? (
+          <Text className="mb-3 text-sm font-medium text-terracotta">{error}</Text>
+        ) : null}
+        {saved ? (
+          <Text className="mb-3 text-sm font-medium text-sage">Saved.</Text>
+        ) : null}
 
-          <PrimaryButton
-            label={saving ? 'Saving…' : 'Save account'}
-            disabled={saving}
-            onPress={save}
-          />
-        </View>
-      )}
+        <PrimaryButton
+          label={saving ? 'Saving…' : 'Save account'}
+          disabled={saving}
+          onPress={save}
+        />
+      </View>
     </View>
   );
 }

@@ -2,19 +2,39 @@ import { Stack } from 'expo-router';
 
 import { colors } from '@/constants/theme';
 
+export const unstable_settings = {
+  initialRouteName: '(tabs)',
+};
+
 export default function BuyerLayout() {
   return (
     <Stack
       screenOptions={{
-        headerStyle: { backgroundColor: colors.cream },
-        headerTintColor: colors.dark,
+        headerStyle: { backgroundColor: colors.mint },
+        headerTintColor: colors.cocoa,
+        headerTitleStyle: { fontWeight: '600', color: colors.cocoa },
         headerShadowVisible: false,
-        contentStyle: { backgroundColor: colors.cream },
+        contentStyle: { backgroundColor: colors.mint },
       }}>
+      <Stack.Screen name="index" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="item/[id]" options={{ title: 'Item' }} />
-      <Stack.Screen name="maker/[id]" options={{ title: 'Maker' }} />
-      <Stack.Screen name="checkout" options={{ title: 'Checkout' }} />
+      <Stack.Screen
+        name="maker/[id]"
+        options={{
+          title: 'Maker',
+          headerTitleAlign: 'center',
+          headerTitleStyle: { fontWeight: '600', fontSize: 28, color: colors.cocoa },
+        }}
+      />
+      <Stack.Screen
+        name="checkout"
+        options={{
+          title: 'Pickup spots',
+          headerTitleAlign: 'center',
+          headerTitleStyle: { fontWeight: '600', fontSize: 28, color: colors.cocoa },
+        }}
+      />
     </Stack>
   );
 }

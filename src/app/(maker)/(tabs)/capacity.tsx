@@ -1,8 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { PrimaryButton } from '@/components/buyer/primary-button';
+import { PrimaryButton } from '@/components/maker/primary-button';
+import { ErrorRetry } from '@/components/error-retry';
 import { CapacityCard } from '@/components/maker/capacity-card';
 import { PrepSheetModal, type PrepLine } from '@/components/maker/prep-sheet-modal';
 import { colors } from '@/constants/theme';
@@ -14,6 +16,8 @@ type Row = {
 };
 
 export default function CapacityScreen() {
+  console.log('[maker] Capacity screen mounted');
+
   const [rows, setRows] = useState<Row[]>([]);
   const [capacities, setCapacities] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -26,6 +30,7 @@ export default function CapacityScreen() {
       const withForecasts = await Promise.all(
         items.map(async (item) => ({ item, forecast: await fetchForecast(item.id) })),
       );
+      console.log('[maker] Capacity fetch ok, rows=', withForecasts.length);
       setError(null);
       setRows(withForecasts);
       setCapacities((prev) => {
@@ -38,17 +43,20 @@ export default function CapacityScreen() {
         return next;
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load capacity.');
+      const message = err instanceof Error ? err.message : 'Could not load capacity.';
+      console.log('[maker] Capacity fetch failed:', message);
+      console.error('[maker] Capacity fetch failed:', err);
+      setError(message);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    // Fetch once on mount; load() only sets state after awaiting the network.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    load();
-  }, [load]);
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   const prepLines = useMemo<PrepLine[]>(
     () =>
@@ -60,52 +68,84 @@ export default function CapacityScreen() {
     [rows, capacities],
   );
 
-  if (loading) {
+  const featured = rows[0];
+  const rest = rows.slice(1);
+
+  if (loading && !error) {
     return (
-      <View className="flex-1 items-center justify-center bg-cream">
-        <ActivityIndicator size="large" color={colors.terracotta} />
+      <View className="flex-1 items-center justify-center bg-mint">
+        <ActivityIndicator size="large" color={colors.dark} />
       </View>
     );
   }
 
   return (
-    <SafeAreaView className="flex-1 bg-cream" edges={['bottom']}>
-      <ScrollView contentContainerClassName="px-5 pb-28 pt-4" keyboardShouldPersistTaps="handled">
-        <Text className="text-[11px] font-semibold uppercase tracking-[1.4px] text-savor/35">
-          Forecast
-        </Text>
-        <Text className="mt-1 text-[32px] font-semibold leading-9 text-savor">Capacity</Text>
-        <Text className="mt-2 text-base leading-6 text-savor/60">
-          Suggested batch sizes from your regulars, the weather, and recent sales.
+    <SafeAreaView className="flex-1 bg-mint" edges={['bottom']}>
+      <ScrollView contentContainerClassName="px-5 pb-28 pt-2" keyboardShouldPersistTaps="handled">
+        <Text className="text-center text-[28px] font-semibold text-cocoa">This week&apos;s plan</Text>
+        <Text className="mt-1 text-center text-[14px] text-cocoa/40">
+          Orders close Wednesday 8pm.
         </Text>
 
         {error ? (
-          <View className="mt-6 rounded-2xl bg-white p-5">
-            <Text className="text-base font-semibold text-terracotta">Couldn&apos;t load</Text>
-            <Text className="mt-1 text-sm text-savor/70">{error}</Text>
+          <View className="mt-6">
+            <ErrorRetry
+              title="Couldn't load capacity"
+              message={error}
+              onRetry={() => {
+                setLoading(true);
+                load();
+              }}
+            />
           </View>
         ) : null}
 
-        <View className="mt-5">
-          {rows.map(({ item, forecast }) => (
+        {featured ? (
+          <View className="mt-6">
             <CapacityCard
-              key={item.id}
-              name={item.name}
-              suggested={forecast.suggested}
-              sold={forecast.sold}
-              reason={forecast.reason}
-              capacity={capacities[item.id] ?? String(forecast.suggested)}
+              name={featured.item.name}
+              suggested={featured.forecast.suggested}
+              sold={featured.forecast.sold}
+              reason={featured.forecast.reason}
+              photo={featured.item.photo}
+              capacity={capacities[featured.item.id] ?? String(featured.forecast.suggested)}
               onChangeCapacity={(value) =>
-                setCapacities((prev) => ({ ...prev, [item.id]: value.replace(/[^0-9]/g, '') }))
+                setCapacities((prev) => ({
+                  ...prev,
+                  [featured.item.id]: value.replace(/[^0-9]/g, ''),
+                }))
               }
             />
+          </View>
+        ) : null}
+
+        <View className="mt-3 flex-row flex-wrap justify-between">
+          {rest.map(({ item, forecast }) => (
+            <View key={item.id} className="mb-3 w-[48%]">
+              <CapacityCard
+                variant="compact"
+                name={item.name}
+                suggested={forecast.suggested}
+                sold={forecast.sold}
+                reason={forecast.reason}
+                photo={item.photo}
+                capacity={capacities[item.id] ?? String(forecast.suggested)}
+                onChangeCapacity={(value) =>
+                  setCapacities((prev) => ({ ...prev, [item.id]: value.replace(/[^0-9]/g, '') }))
+                }
+              />
+            </View>
           ))}
         </View>
       </ScrollView>
 
       {rows.length > 0 ? (
-        <View className="absolute bottom-0 left-0 right-0 bg-cream px-5 pb-6 pt-3">
-          <PrimaryButton label="View prep sheet" onPress={() => setPrepVisible(true)} />
+        <View className="absolute bottom-0 left-0 right-0 bg-mint px-5 pb-6 pt-3">
+          <PrimaryButton
+            variant="outline"
+            label="View prep sheet"
+            onPress={() => setPrepVisible(true)}
+          />
         </View>
       ) : null}
 

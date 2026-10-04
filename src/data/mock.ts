@@ -574,3 +574,89 @@ export function getMeetupSpot(id: string) {
 export function getItemsByMaker(makerId: string) {
   return items.filter((item) => item.maker_id === makerId);
 }
+
+export type ChatAuthor = 'maker' | 'buyer';
+
+export type ChatMessage = {
+  id: string;
+  from: ChatAuthor;
+  text: string;
+  time: string;
+};
+
+export function createSeedThreads(): Record<string, ChatMessage[]> {
+  return {
+    'maker-maple-rye': [
+      {
+        id: 'maple-1',
+        from: 'maker',
+        text: 'Your country sourdough is in the oven. Want it extra dark?',
+        time: '2:14 PM',
+      },
+      {
+        id: 'maple-2',
+        from: 'buyer',
+        text: 'Medium-dark is perfect, thank you!',
+        time: '2:16 PM',
+      },
+    ],
+    'maker-kerrytown-jam': [
+      {
+        id: 'jam-1',
+        from: 'maker',
+        text: 'Peach vanilla is almost gone. I can hold a jar if you want it this week.',
+        time: '11:02 AM',
+      },
+      {
+        id: 'jam-2',
+        from: 'buyer',
+        text: 'Yes please — one peach and one blackberry sage.',
+        time: '11:08 AM',
+      },
+    ],
+    'maker-burns-granola': [
+      {
+        id: 'granola-1',
+        from: 'maker',
+        text: 'Fresh cacao cherry clusters land Saturday. Need a bag in your box?',
+        time: '9:40 AM',
+      },
+    ],
+    'maker-honeycomb-hills': [
+      {
+        id: 'honey-1',
+        from: 'maker',
+        text: 'Fall wildflower is bottled. I can add a comb square if you like.',
+        time: '4:05 PM',
+      },
+      {
+        id: 'honey-2',
+        from: 'buyer',
+        text: 'Wildflower only this week — see you at the library.',
+        time: '4:21 PM',
+      },
+    ],
+    'maker-night-oven': [
+      {
+        id: 'cookies-1',
+        from: 'maker',
+        text: 'Brown butter chips just came off the tray. Two packs still open.',
+        time: '8:12 PM',
+      },
+    ],
+    'maker-washtenaw-wildflower': [
+      {
+        id: 'flower-1',
+        from: 'maker',
+        text: 'Lavender shortbread is boxed. Any nut-free notes for next week?',
+        time: '1:30 PM',
+      },
+      {
+        id: 'flower-2',
+        from: 'buyer',
+        text: 'No nuts, please. Thumbprints look great too.',
+        time: '1:36 PM',
+      },
+    ],
+  };
+}

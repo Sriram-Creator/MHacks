@@ -1,9 +1,11 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
 import {
+  createSeedThreads,
   lastWeekBox,
   mockOrders,
   type BoxCadence,
+  type ChatMessage,
   type Order,
   type PickupWindow,
 } from '@/data/mock';
@@ -17,6 +19,11 @@ export type BoxItem = {
 };
 
 type AppContextValue = {
+  isAuthenticated: boolean;
+  authEmail: string | null;
+  signIn: (email: string, password: string) => void;
+  signUp: (email: string, password: string) => void;
+  signOut: () => void;
   mode: AppMode;
   setMode: (mode: AppMode) => void;
   state: AppState;
@@ -30,16 +37,33 @@ type AppContextValue = {
   repeatLastWeek: () => void;
   orders: Order[];
   placeOrder: (spotId: string, window: PickupWindow, total: number) => Order;
+  threads: Record<string, ChatMessage[]>;
+  sendChatMessage: (makerId: string, text: string) => void;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
 
 export function AppProvider({ children }: { children: ReactNode }) {
+  // Mock/local auth — no backend. Any non-empty credentials are accepted.
+  const [authEmail, setAuthEmail] = useState<string | null>(null);
   const [mode, setMode] = useState<AppMode>('buyer');
   const [state, setState] = useState<AppState>('MI');
   const [boxItems, setBoxItems] = useState<BoxItem[]>([]);
   const [boxCadence, setBoxCadence] = useState<BoxCadence>('one-time');
   const [orders, setOrders] = useState<Order[]>(mockOrders);
+  const [threads, setThreads] = useState<Record<string, ChatMessage[]>>(createSeedThreads);
+
+  const signIn = useCallback((email: string, _password: string) => {
+    setAuthEmail(email.trim());
+  }, []);
+
+  const signUp = useCallback((email: string, _password: string) => {
+    setAuthEmail(email.trim());
+  }, []);
+
+  const signOut = useCallback(() => {
+    setAuthEmail(null);
+  }, []);
 
   const addToBox = useCallback((itemId: string) => {
     setBoxItems((prev) => {
@@ -66,6 +90,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setBoxItems(lastWeekBox.map((line) => ({ ...line })));
   }, []);
 
+  const sendChatMessage = useCallback((makerId: string, text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    const message: ChatMessage = {
+      id: `msg-${makerId}-${Date.now()}`,
+      from: 'buyer',
+      text: trimmed,
+      time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+    };
+
+    setThreads((current) => ({
+      ...current,
+      [makerId]: [...(current[makerId] ?? []), message],
+    }));
+  }, []);
+
   const placeOrder = useCallback(
     (spotId: string, window: PickupWindow, total: number) => {
       const order: Order = {
@@ -86,6 +129,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const value = useMemo(
     () => ({
+      isAuthenticated: authEmail !== null,
+      authEmail,
+      signIn,
+      signUp,
+      signOut,
       mode,
       setMode,
       state,
@@ -99,8 +147,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       repeatLastWeek,
       orders,
       placeOrder,
+      threads,
+      sendChatMessage,
     }),
     [
+      authEmail,
+      signIn,
+      signUp,
+      signOut,
       mode,
       state,
       boxItems,
@@ -110,6 +164,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       repeatLastWeek,
       orders,
       placeOrder,
+      threads,
+      sendChatMessage,
     ],
   );
 
