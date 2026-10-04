@@ -1,39 +1,77 @@
-import { Pressable, Text, View } from 'react-native';
+import { useRef } from 'react';
+import { Text, View, type GestureResponderEvent } from 'react-native';
 
-type Radius = 5 | 10 | 25;
+import { colors } from '@/constants/theme';
+
+const MIN_RADIUS = 5;
+const MAX_RADIUS = 25;
 
 type RadiusSliderProps = {
-  value: Radius;
-  onChange: (value: Radius) => void;
+  value: number;
+  onChange: (value: number) => void;
 };
 
-const stops: Radius[] = [5, 10, 25];
+function clampRadius(value: number) {
+  return Math.min(MAX_RADIUS, Math.max(MIN_RADIUS, Math.round(value)));
+}
 
 export function RadiusSlider({ value, onChange }: RadiusSliderProps) {
+  const trackRef = useRef<View>(null);
+  const widthRef = useRef(1);
+  const originXRef = useRef(0);
+
+  function measureTrack() {
+    trackRef.current?.measureInWindow((x, _y, width) => {
+      originXRef.current = x;
+      widthRef.current = width || 1;
+    });
+  }
+
+  function setFromPageX(pageX: number) {
+    const ratio = (pageX - originXRef.current) / widthRef.current;
+    onChange(clampRadius(MIN_RADIUS + ratio * (MAX_RADIUS - MIN_RADIUS)));
+  }
+
+  function onGrant(event: GestureResponderEvent) {
+    measureTrack();
+    const width = widthRef.current || 1;
+    const ratio = event.nativeEvent.locationX / width;
+    onChange(clampRadius(MIN_RADIUS + ratio * (MAX_RADIUS - MIN_RADIUS)));
+  }
+
+  function onMove(event: GestureResponderEvent) {
+    setFromPageX(event.nativeEvent.pageX);
+  }
+
+  const thumbPercent = ((value - MIN_RADIUS) / (MAX_RADIUS - MIN_RADIUS)) * 100;
+
   return (
     <View>
-      <View className="h-8 justify-center">
-        <View className="h-[3px] rounded-full bg-[#E4DDD2]" />
-        <View className="absolute inset-x-0 flex-row items-center justify-between">
-          {stops.map((stop) => {
-            const selected = value === stop;
-            return (
-              <Pressable
-                key={stop}
-                onPress={() => onChange(stop)}
-                hitSlop={12}
-                className="h-8 w-8 items-center justify-center">
-                <View
-                  className={`rounded-full ${
-                    selected ? 'h-5 w-5 bg-terracotta' : 'h-2.5 w-2.5 bg-[#C8C0B4]'
-                  }`}
-                />
-              </Pressable>
-            );
-          })}
-        </View>
+      <View
+        ref={trackRef}
+        onLayout={measureTrack}
+        onStartShouldSetResponder={() => true}
+        onMoveShouldSetResponder={() => true}
+        onResponderTerminationRequest={() => false}
+        onResponderGrant={onGrant}
+        onResponderMove={onMove}
+        style={{ height: 44, justifyContent: 'center' }}
+        collapsable={false}>
+        <View style={{ height: 3, borderRadius: 99, backgroundColor: '#E4DDD2' }} />
+        <View
+          pointerEvents="none"
+          style={{
+            position: 'absolute',
+            left: `${thumbPercent}%`,
+            marginLeft: -10,
+            width: 20,
+            height: 20,
+            borderRadius: 10,
+            backgroundColor: colors.terracotta,
+          }}
+        />
       </View>
-      <View className="mt-1 flex-row justify-between">
+      <View className="flex-row justify-between">
         <Text className="text-xs text-savor/40">5 mi</Text>
         <Text className="text-xs text-savor/40">10 mi</Text>
         <Text className="text-xs text-savor/40">25 mi</Text>
