@@ -30,7 +30,7 @@ export default function MakerProfileScreen() {
 
   function onAction(key: string) {
     if (key === 'chat') {
-      router.push({ pathname: '/messages/[makerId]', params: { makerId: selectedMaker.id } });
+      router.push({ pathname: '/messages', params: { makerId: selectedMaker.id } });
       return;
     }
     if (key === 'call') {

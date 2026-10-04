@@ -1,9 +1,11 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useMemo, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { formatPrice } from '@/components/buyer/format';
+import { ErrorRetry } from '@/components/error-retry';
 import { colors } from '@/constants/theme';
 import {
   fetchMeetupSpots,
@@ -39,25 +41,28 @@ export default function MakerOrdersScreen() {
       setSpots(nextSpots);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load orders.');
+      const message = err instanceof Error ? err.message : 'Could not load orders.';
+      console.log('[orders] load failed:', message);
+      console.error('[orders] load failed:', err);
+      setError(message);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, []);
 
-  useEffect(() => {
-    // Fetch once on mount; load() only sets state after awaiting the network.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    load();
-  }, [load]);
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   const spotName = useMemo(() => {
     const map = new Map(spots.map((spot) => [spot.id, spot.name]));
     return (id: string | null) => (id ? (map.get(id) ?? 'Meetup spot') : 'No spot chosen');
   }, [spots]);
 
-  if (loading) {
+  if (loading && !error) {
     return (
       <View className="flex-1 items-center justify-center bg-cream">
         <ActivityIndicator size="large" color={colors.terracotta} />
@@ -85,10 +90,15 @@ export default function MakerOrdersScreen() {
         <Text className="mt-1 text-[32px] font-semibold leading-9 text-savor">Orders</Text>
 
         {error ? (
-          <View className="mt-6 rounded-2xl bg-white p-5">
-            <Text className="text-base font-semibold text-terracotta">Couldn&apos;t load orders</Text>
-            <Text className="mt-1 text-sm text-savor/70">{error}</Text>
-            <Text className="mt-2 text-xs text-savor/45">Pull down to retry.</Text>
+          <View className="mt-6">
+            <ErrorRetry
+              title="Couldn't load orders"
+              message={error}
+              onRetry={() => {
+                setLoading(true);
+                load();
+              }}
+            />
           </View>
         ) : null}
 

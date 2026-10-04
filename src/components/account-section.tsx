@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
+import { useCallback, useState } from 'react';
 import { ActivityIndicator, Text, View } from 'react-native';
 
+import { ErrorRetry } from '@/components/error-retry';
 import { LabeledInput } from '@/components/labeled-input';
 import { PrimaryButton } from '@/components/buyer/primary-button';
 import { USER_ID } from '@/constants/config';
@@ -26,6 +28,7 @@ export function AccountSection() {
     address: '',
   });
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
@@ -33,7 +36,7 @@ export function AccountSection() {
   const load = useCallback(async () => {
     try {
       const user = await fetchUser(USER_ID);
-      setError(null);
+      setLoadError(null);
       setFields({
         name: user.name,
         phone: user.phone,
@@ -41,17 +44,20 @@ export function AccountSection() {
         address: user.address,
       });
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not load your account.');
+      const message = err instanceof Error ? err.message : 'Could not load your account.';
+      console.log('[account] load failed:', message);
+      console.error('[account] load failed:', err);
+      setLoadError(message);
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    // Fetch once on mount; load() only sets state after awaiting the network.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    load();
-  }, [load]);
+  useFocusEffect(
+    useCallback(() => {
+      load();
+    }, [load]),
+  );
 
   function update(key: keyof Fields, value: string) {
     setFields((prev) => ({ ...prev, [key]: value }));
@@ -65,7 +71,10 @@ export function AccountSection() {
       await updateUser(USER_ID, fields);
       setSaved(true);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Could not save.');
+      const message = err instanceof Error ? err.message : 'Could not save.';
+      console.log('[account] save failed:', message);
+      console.error('[account] save failed:', err);
+      setError(message);
     } finally {
       setSaving(false);
     }
@@ -78,8 +87,20 @@ export function AccountSection() {
         Your contact details for order handoffs.
       </Text>
 
-      {loading ? (
+      {loading && !loadError ? (
         <ActivityIndicator className="mt-6" color={colors.terracotta} />
+      ) : loadError ? (
+        <View className="mt-4">
+          <ErrorRetry
+            title="Couldn't load account"
+            message={loadError}
+            onRetry={() => {
+              setLoadError(null);
+              setLoading(true);
+              load();
+            }}
+          />
+        </View>
       ) : (
         <View className="mt-4">
           <LabeledInput

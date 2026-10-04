@@ -116,7 +116,8 @@ function Inbox({
           <View key={conversation.id} className="border-b border-savor/5">
             <ConversationRow
               conversation={conversation}
-              maker={maker}
+              name={maker.name}
+              photo={maker.photo}
               unread={conversation.unread && !readMakerIds.has(maker.id)}
               onPress={() => onOpen(maker.id)}
             />

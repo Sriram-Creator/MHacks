@@ -1,33 +1,43 @@
 import { Image } from 'expo-image';
 import { Pressable, Text, View } from 'react-native';
 
-import { formatInboxTime, lastMessage, type Conversation } from '@/components/buyer/mock-conversations';
+import {
+  formatInboxTime,
+  lastMessage,
+  type Conversation,
+} from '@/components/buyer/mock-conversations';
 import { colors } from '@/constants/theme';
-import type { Maker } from '@/data/mock';
 
 type ConversationRowProps = {
   conversation: Conversation;
-  maker: Maker;
+  name: string;
+  photo: string;
   unread: boolean;
   onPress: () => void;
 };
 
-export function ConversationRow({ conversation, maker, unread, onPress }: ConversationRowProps) {
+export function ConversationRow({
+  conversation,
+  name,
+  photo,
+  unread,
+  onPress,
+}: ConversationRowProps) {
   const latest = lastMessage(conversation);
 
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`${maker.name}. ${latest.body}`}
+      accessibilityLabel={`${name}. ${latest.body}`}
       className="min-h-[76px] flex-row items-center px-5 py-3">
-      <Image source={maker.photo} contentFit="cover" className="h-12 w-12 rounded-full bg-map" />
+      <Image source={photo} contentFit="cover" className="h-12 w-12 rounded-full bg-map" />
       <View className="ml-3 flex-1">
         <View className="flex-row items-center">
           <Text
             numberOfLines={1}
             className={`flex-1 text-base text-savor ${unread ? 'font-bold' : 'font-semibold'}`}>
-            {maker.name}
+            {name}
           </Text>
           <Text className="ml-2 text-xs text-savor/45">{formatInboxTime(latest.sentAt)}</Text>
         </View>
