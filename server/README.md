@@ -7,7 +7,7 @@ Standalone Express + TypeScript API (separate from the Expo app). Runs on **port
 ```bash
 cd server
 npm install
-cp .env.example .env   # then add your OPENAI_API_KEY
+cp .env.example .env   # then add your NVIDIA_API_KEY
 npm run dev
 ```
 
@@ -28,10 +28,11 @@ Body:
 { "image": "<base64 or data URL>", "state": "MI", "hint": "jam" }
 ```
 
-Sends the image to the Gemini vision LLM, then runs a cottage-food rules check
-for the given state.
+Sends the image to NVIDIA NIM's OpenAI-compatible vision API
+(`https://integrate.api.nvidia.com/v1/chat/completions`), then runs a
+cottage-food rules check for the given state.
 
-**Mock mode:** if `GEMINI_API_KEY` is missing or `MOCK_AI=true`, the LLM call is
+**Mock mode:** if `NVIDIA_API_KEY` is missing or `MOCK_AI=true`, the LLM call is
 skipped and a realistic hardcoded listing is returned based on `hint`
 (e.g. `"jam"` → Strawberry Jam, `"pickles"` → Dill Pickles). In mock mode
 `image` is optional. The legality check always runs on the result, and the
