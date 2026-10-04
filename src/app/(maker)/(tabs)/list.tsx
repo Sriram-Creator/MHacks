@@ -1,0 +1,314 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
+import * as ImagePicker from 'expo-image-picker';
+import { Image } from 'expo-image';
+import { useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { LabeledInput } from '@/components/maker/labeled-input';
+import { LegalBanner } from '@/components/maker/legal-banner';
+import { PrimaryButton } from '@/components/buyer/primary-button';
+import { colors } from '@/constants/theme';
+import { useApp } from '@/context/AppContext';
+import { createItem, generateListing, STATE_NAMES, type Legality } from '@/lib/api';
+
+/** Splits a comma-separated string into a trimmed, non-empty list. */
+function splitList(value: string): string[] {
+  return value
+    .split(',')
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+type Phase = 'idle' | 'loading' | 'form' | 'published' | 'error';
+
+/** Downscale to max 1024px on the longest side at JPEG quality 0.7, as base64. */
+async function toDownscaledDataUrl(asset: ImagePicker.ImagePickerAsset): Promise<string> {
+  const context = ImageManipulator.manipulate(asset.uri);
+  const longest = Math.max(asset.width ?? 0, asset.height ?? 0);
+
+  if (longest > 1024 && asset.width && asset.height) {
+    const scale = 1024 / longest;
+    context.resize({
+      width: Math.round(asset.width * scale),
+      height: Math.round(asset.height * scale),
+    });
+  }
+
+  const rendered = await context.renderAsync();
+  const result = await rendered.saveAsync({
+    format: SaveFormat.JPEG,
+    compress: 0.7,
+    base64: true,
+  });
+
+  return `data:image/jpeg;base64,${result.base64 ?? ''}`;
+}
+
+export default function MakerListScreen() {
+  const { state } = useApp();
+  const stateName = STATE_NAMES[state] ?? state;
+
+  const [phase, setPhase] = useState<Phase>('idle');
+  const [preview, setPreview] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [legality, setLegality] = useState<Legality | null>(null);
+  const [publishing, setPublishing] = useState(false);
+  const [publishError, setPublishError] = useState<string | null>(null);
+
+  // Editable form fields.
+  const [name, setName] = useState('');
+  const [category, setCategory] = useState('');
+  const [price, setPrice] = useState('');
+  const [description, setDescription] = useState('');
+  const [ingredients, setIngredients] = useState('');
+  const [allergens, setAllergens] = useState('');
+  const [capacity, setCapacity] = useState('');
+
+  async function handleAsset(asset: ImagePicker.ImagePickerAsset) {
+    setPreview(asset.uri);
+    setPhase('loading');
+    setError(null);
+    try {
+      const dataUrl = await toDownscaledDataUrl(asset);
+      const listing = await generateListing(dataUrl, state);
+
+      setName(listing.name);
+      setCategory(listing.category);
+      setPrice(String(listing.suggested_price));
+      setDescription(listing.description);
+      setIngredients(listing.ingredients.join(', '));
+      setAllergens(listing.allergens.join(', '));
+      setCapacity('12');
+      setLegality(listing.legality);
+      setPhase('form');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Something went wrong.');
+      setPhase('error');
+    }
+  }
+
+  async function takePhoto() {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Camera needed', 'Allow camera access to photograph your product.');
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({ mediaTypes: ['images'], quality: 1 });
+    if (!result.canceled) {
+      handleAsset(result.assets[0]);
+    }
+  }
+
+  async function pickFromLibrary() {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Photos needed', 'Allow photo access to choose a product picture.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ['images'],
+      quality: 1,
+    });
+    if (!result.canceled) {
+      handleAsset(result.assets[0]);
+    }
+  }
+
+  function reset() {
+    setPhase('idle');
+    setPreview(null);
+    setError(null);
+    setLegality(null);
+    setPublishError(null);
+    setName('');
+    setCategory('');
+    setPrice('');
+    setDescription('');
+    setIngredients('');
+    setAllergens('');
+    setCapacity('');
+  }
+
+  async function publish() {
+    setPublishing(true);
+    setPublishError(null);
+    try {
+      await createItem({
+        name,
+        category,
+        description,
+        price: Number(price) || 0,
+        ingredients: splitList(ingredients),
+        allergens: splitList(allergens),
+        left_this_week: Number(capacity) || 0,
+        photo: preview ?? undefined,
+      });
+      setPhase('published');
+    } catch (err) {
+      setPublishError(err instanceof Error ? err.message : 'Could not publish.');
+    } finally {
+      setPublishing(false);
+    }
+  }
+
+  // --- Loading ---------------------------------------------------------------
+  if (phase === 'loading') {
+    return (
+      <SafeAreaView className="flex-1 bg-cream" edges={['bottom']}>
+        <View className="flex-1 items-center justify-center px-6">
+          {preview ? (
+            <Image
+              source={{ uri: preview }}
+              contentFit="cover"
+              className="h-48 w-48 rounded-[28px] bg-map"
+            />
+          ) : null}
+          <ActivityIndicator className="mt-8" size="large" color={colors.terracotta} />
+          <Text className="mt-4 text-xl font-semibold text-savor">Reading your product…</Text>
+          <Text className="mt-1 text-sm text-savor/55">Writing a listing and checking the rules</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // --- Published -------------------------------------------------------------
+  if (phase === 'published') {
+    return (
+      <SafeAreaView className="flex-1 bg-cream" edges={['bottom']}>
+        <View className="flex-1 items-center justify-center px-6">
+          <View className="w-full items-center rounded-2xl bg-white p-8">
+            <Ionicons name="checkmark-circle" size={56} color={colors.sage} />
+            <Text className="mt-4 text-2xl font-semibold text-savor">{name} is live</Text>
+            <Text className="mt-2 text-center text-base text-savor/60">
+              Buyers near you can now add it to their meetup box.
+            </Text>
+            <View className="mt-6 w-full">
+              <PrimaryButton label="List another" onPress={reset} />
+            </View>
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // --- Idle / Error / Form ---------------------------------------------------
+  const showForm = phase === 'form';
+  const isLegal = legality?.is_legal ?? false;
+
+  return (
+    <SafeAreaView className="flex-1 bg-cream" edges={['bottom']}>
+      <ScrollView contentContainerClassName="px-5 pb-10 pt-4" keyboardShouldPersistTaps="handled">
+        <Text className="text-[11px] font-semibold uppercase tracking-[1.4px] text-savor/35">
+          New listing · {stateName}
+        </Text>
+        <Text className="mt-1 text-[32px] font-semibold leading-9 text-savor">List an item</Text>
+        <Text className="mt-2 text-base leading-6 text-savor/60">
+          Snap a photo and we&apos;ll draft the listing and check if it&apos;s legal to sell.
+        </Text>
+
+        {preview && showForm ? (
+          <Image
+            source={{ uri: preview }}
+            contentFit="cover"
+            className="mt-5 h-56 w-full rounded-2xl bg-map"
+          />
+        ) : null}
+
+        {!showForm ? (
+          <View className="mt-6 gap-3">
+            <Pressable
+              onPress={takePhoto}
+              className="min-h-[64px] flex-row items-center rounded-2xl bg-terracotta px-5">
+              <Ionicons name="camera" size={24} color={colors.cream} />
+              <Text className="ml-3 text-lg font-semibold text-cream">Take a photo</Text>
+            </Pressable>
+            <Pressable
+              onPress={pickFromLibrary}
+              className="min-h-[64px] flex-row items-center rounded-2xl border border-savor/15 bg-white px-5">
+              <Ionicons name="images-outline" size={24} color={colors.dark} />
+              <Text className="ml-3 text-lg font-semibold text-savor">Choose from library</Text>
+            </Pressable>
+          </View>
+        ) : null}
+
+        {phase === 'error' ? (
+          <View className="mt-6 rounded-2xl bg-white p-5">
+            <Text className="text-base font-semibold text-terracotta">Couldn&apos;t read that</Text>
+            <Text className="mt-1 text-sm leading-5 text-savor/70">{error}</Text>
+            <Text className="mt-2 text-xs text-savor/45">
+              Make sure the Savor server is running, then try again.
+            </Text>
+          </View>
+        ) : null}
+
+        {showForm ? (
+          <View className="mt-6">
+            {legality ? (
+              <View className="mb-5">
+                <LegalBanner
+                  isLegal={isLegal}
+                  stateName={stateName}
+                  reason={legality.reason}
+                />
+              </View>
+            ) : null}
+
+            <LabeledInput label="Name" value={name} onChangeText={setName} />
+            <LabeledInput label="Category" value={category} onChangeText={setCategory} />
+            <LabeledInput
+              label="Price (USD)"
+              value={price}
+              onChangeText={setPrice}
+              keyboardType="decimal-pad"
+            />
+            <LabeledInput
+              label="Description"
+              value={description}
+              onChangeText={setDescription}
+              multiline
+            />
+            <LabeledInput
+              label="Ingredients"
+              value={ingredients}
+              onChangeText={setIngredients}
+              placeholder="Comma separated"
+              multiline
+            />
+            <LabeledInput
+              label="Allergens"
+              value={allergens}
+              onChangeText={setAllergens}
+              placeholder="Comma separated"
+            />
+            <LabeledInput
+              label="Quantity this week"
+              value={capacity}
+              onChangeText={(value) => setCapacity(value.replace(/[^0-9]/g, ''))}
+              keyboardType="number-pad"
+              placeholder="How many you can make"
+            />
+
+            {publishError ? (
+              <Text className="mb-3 text-sm font-medium text-terracotta">{publishError}</Text>
+            ) : null}
+
+            <View className="mt-2">
+              <PrimaryButton
+                label={
+                  publishing ? 'Publishing…' : isLegal ? 'Publish' : 'Not allowed to publish'
+                }
+                disabled={!isLegal || publishing}
+                onPress={publish}
+              />
+            </View>
+            <Pressable onPress={reset} className="mt-4 items-center py-2">
+              <Text className="text-base font-semibold text-savor/50">Start over</Text>
+            </Pressable>
+          </View>
+        ) : null}
+      </ScrollView>
+    </SafeAreaView>
+  );
+}
