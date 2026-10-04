@@ -1,9 +1,11 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
 
 import {
+  createSeedThreads,
   lastWeekBox,
   mockOrders,
   type BoxCadence,
+  type ChatMessage,
   type Order,
   type PickupWindow,
 } from '@/data/mock';
@@ -35,6 +37,8 @@ type AppContextValue = {
   repeatLastWeek: () => void;
   orders: Order[];
   placeOrder: (spotId: string, window: PickupWindow, total: number) => Order;
+  threads: Record<string, ChatMessage[]>;
+  sendChatMessage: (makerId: string, text: string) => void;
 };
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -47,6 +51,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [boxItems, setBoxItems] = useState<BoxItem[]>([]);
   const [boxCadence, setBoxCadence] = useState<BoxCadence>('one-time');
   const [orders, setOrders] = useState<Order[]>(mockOrders);
+  const [threads, setThreads] = useState<Record<string, ChatMessage[]>>(createSeedThreads);
 
   const signIn = useCallback((email: string, _password: string) => {
     setAuthEmail(email.trim());
@@ -83,6 +88,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const repeatLastWeek = useCallback(() => {
     setBoxItems(lastWeekBox.map((line) => ({ ...line })));
+  }, []);
+
+  const sendChatMessage = useCallback((makerId: string, text: string) => {
+    const trimmed = text.trim();
+    if (!trimmed) {
+      return;
+    }
+
+    const message: ChatMessage = {
+      id: `msg-${makerId}-${Date.now()}`,
+      from: 'buyer',
+      text: trimmed,
+      time: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+    };
+
+    setThreads((current) => ({
+      ...current,
+      [makerId]: [...(current[makerId] ?? []), message],
+    }));
   }, []);
 
   const placeOrder = useCallback(
@@ -123,6 +147,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       repeatLastWeek,
       orders,
       placeOrder,
+      threads,
+      sendChatMessage,
     }),
     [
       authEmail,
@@ -138,6 +164,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       repeatLastWeek,
       orders,
       placeOrder,
+      threads,
+      sendChatMessage,
     ],
   );
 
