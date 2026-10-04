@@ -1,13 +1,13 @@
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Text, View } from 'react-native';
 
-import { Spacing } from '@/constants/theme';
+import { colors } from '@/constants/theme';
 
 export function LawBanner() {
   return (
-    <View
-      className="mx-5 mt-3 rounded-2xl bg-gold/20"
-      style={{ paddingHorizontal: Spacing.three, paddingVertical: Spacing.two }}>
-      <Text className="text-center text-xs font-medium leading-4 text-savor">
+    <View className="flex-row items-center border-b border-savor/5 bg-[#EEE8DE] px-5 py-2.5">
+      <Ionicons name="information-circle-outline" size={16} color={colors.sage} />
+      <Text className="ml-2 flex-1 text-xs leading-4 text-savor/70">
         Michigan law requires you to be able to contact the maker before buying.
       </Text>
     </View>

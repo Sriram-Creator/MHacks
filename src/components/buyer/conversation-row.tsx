@@ -8,12 +8,12 @@ import type { Maker } from '@/data/mock';
 type ConversationRowProps = {
   conversation: Conversation;
   maker: Maker;
+  unread: boolean;
   onPress: () => void;
 };
 
-export function ConversationRow({ conversation, maker, onPress }: ConversationRowProps) {
+export function ConversationRow({ conversation, maker, unread, onPress }: ConversationRowProps) {
   const latest = lastMessage(conversation);
-  const unread = conversation.unread;
 
   return (
     <Pressable
@@ -21,12 +21,7 @@ export function ConversationRow({ conversation, maker, onPress }: ConversationRo
       accessibilityRole="button"
       accessibilityLabel={`${maker.name}. ${latest.body}`}
       className="min-h-[76px] flex-row items-center px-5 py-3">
-      <Image
-        source={maker.photo}
-        contentFit="cover"
-        style={{ backgroundColor: colors.map }}
-        className="h-12 w-12 rounded-full"
-      />
+      <Image source={maker.photo} contentFit="cover" className="h-12 w-12 rounded-full bg-map" />
       <View className="ml-3 flex-1">
         <View className="flex-row items-center">
           <Text
