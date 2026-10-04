@@ -21,6 +21,7 @@ export default function LoginScreen() {
     }
     // Mock/local auth — entering the app on any non-empty credentials.
     signIn(email, password);
+    router.replace('/');
   }
 
   return (

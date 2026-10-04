@@ -1,4 +1,13 @@
 import { API_URL } from '@/constants/config';
+import {
+  forecasts,
+  getItem,
+  getMaker,
+  items,
+  makers,
+  meetupSpots,
+  mockOrders,
+} from '@/data/mock';
 
 export type Legality = {
   is_legal: boolean;
@@ -99,26 +108,100 @@ async function request(path: string, init?: RequestInit): Promise<Response> {
         : err instanceof Error
           ? `${err.message} — ${url}`
           : `Network request failed — ${url}`;
-    console.log('[api] request failed:', message);
-    console.error('[api] request failed:', err);
-    throw new Error(message);
+    console.warn('[api] could not connect to server', message);
+    throw new Error('could not connect to server');
   } finally {
     clearTimeout(timeout);
   }
 }
 
-async function getJson<T>(path: string): Promise<T> {
-  const res = await request(path);
-  if (!res.ok) {
-    const message = `Request failed (${res.status}) — ${API_URL}${path}`;
-    console.error('[api]', message);
-    throw new Error(message);
+async function getJson<T>(path: string, fallback: T): Promise<T> {
+  try {
+    const res = await request(path);
+    if (!res.ok) {
+      console.warn('[api] could not connect to server', `${API_URL}${path}`, res.status);
+      return fallback;
+    }
+    return (await res.json()) as T;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'could not connect to server';
+    console.warn('[api] could not connect to server', message);
+    return fallback;
   }
-  return (await res.json()) as T;
+}
+
+function mockServerItems(): ServerItem[] {
+  return items.map((item) => {
+    const maker = getMaker(item.maker_id);
+    return {
+      id: item.id,
+      name: item.name,
+      maker: maker?.name ?? 'Local maker',
+      makerId: item.maker_id,
+      category: item.category,
+      price: item.price,
+      allergens: item.allergens,
+      left_this_week: item.left_this_week,
+      photo: item.photo,
+    };
+  });
+}
+
+function mockServerUser(id: string): ServerUser {
+  const maker = makers[0];
+  return {
+    id,
+    name: '',
+    phone: '',
+    email: '',
+    address: '',
+    bio: maker?.bio ?? '',
+    photo: maker?.photo ?? '',
+  };
+}
+
+function mockMeetupSpots(): ServerMeetupSpot[] {
+  return meetupSpots.map((spot) => ({
+    id: spot.id,
+    name: spot.name,
+    address: spot.address,
+    lat: 42.2808,
+    lng: -83.743,
+    notes: spot.notes,
+  }));
+}
+
+function mockServerOrders(): ServerOrder[] {
+  return mockOrders.flatMap((order) =>
+    order.items.map((line, index) => {
+      const item = getItem(line.itemId);
+      return {
+        id: `${order.id}-${index}`,
+        itemId: line.itemId,
+        itemName: item?.name ?? 'Item',
+        quantity: line.quantity,
+        unit_price: item?.price ?? 0,
+        total: (item?.price ?? 0) * line.quantity,
+        buyerName: 'Jordan M.',
+        meetupSpotId: order.spotId,
+        createdAt: new Date().toISOString(),
+      };
+    }),
+  );
+}
+
+function mockForecast(itemId: string): ServerForecast {
+  return (
+    forecasts[itemId] ?? {
+      suggested: 12,
+      sold: 8,
+      reason: 'Offline estimate from last week.',
+    }
+  );
 }
 
 export function fetchItems() {
-  return getJson<ServerItem[]>('/items');
+  return getJson<ServerItem[]>('/items', mockServerItems());
 }
 
 export type NewItemInput = {
@@ -160,19 +243,19 @@ export async function createItem(input: NewItemInput): Promise<ServerItem> {
 }
 
 export function fetchForecast(itemId: string) {
-  return getJson<ServerForecast>(`/forecast/${itemId}`);
+  return getJson<ServerForecast>(`/forecast/${itemId}`, mockForecast(itemId));
 }
 
 export function fetchMeetupSpots() {
-  return getJson<ServerMeetupSpot[]>('/meetup-spots');
+  return getJson<ServerMeetupSpot[]>('/meetup-spots', mockMeetupSpots());
 }
 
 export function fetchOrders() {
-  return getJson<ServerOrder[]>('/orders');
+  return getJson<ServerOrder[]>('/orders', mockServerOrders());
 }
 
 export function fetchUser(id: string) {
-  return getJson<ServerUser>(`/users/${id}`);
+  return getJson<ServerUser>(`/users/${id}`, mockServerUser(id));
 }
 
 /** Updates the provided account fields for a user and returns the record. */
@@ -180,29 +263,37 @@ export async function updateUser(
   id: string,
   patch: Partial<Omit<ServerUser, 'id'>>,
 ): Promise<ServerUser> {
-  const res = await request(`/users/${id}`, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(patch),
-  });
-
-  const text = await res.text();
-  let data: unknown;
   try {
-    data = JSON.parse(text);
-  } catch {
-    throw new Error(text || `Request failed (${res.status})`);
-  }
+    const res = await request(`/users/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(patch),
+    });
 
-  if (!res.ok) {
-    const message =
-      typeof data === 'object' && data && 'error' in data
-        ? String((data as { error: unknown }).error)
-        : `Request failed (${res.status})`;
-    throw new Error(message);
-  }
+    const text = await res.text();
+    let data: unknown;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      console.warn('[api] could not connect to server', text || `Request failed (${res.status})`);
+      return { ...mockServerUser(id), ...patch };
+    }
 
-  return data as ServerUser;
+    if (!res.ok) {
+      const message =
+        typeof data === 'object' && data && 'error' in data
+          ? String((data as { error: unknown }).error)
+          : `Request failed (${res.status})`;
+      console.warn('[api] could not connect to server', message);
+      return { ...mockServerUser(id), ...patch };
+    }
+
+    return data as ServerUser;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'could not connect to server';
+    console.warn('[api] could not connect to server', message);
+    return { ...mockServerUser(id), ...patch };
+  }
 }
 
 /**

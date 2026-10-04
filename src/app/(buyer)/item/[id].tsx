@@ -41,7 +41,7 @@ export default function ItemDetailScreen() {
 
   return (
     <View className="flex-1 bg-mint">
-      <ScrollView contentContainerClassName="pb-32">
+      <ScrollView contentContainerClassName="pb-44">
         <Image source={item.photo} contentFit="cover" className="h-[300px] w-full bg-[#F3E6D8]" />
         <View className="-mt-6 rounded-t-[28px] bg-white px-6 pt-7">
           <View className="flex-row items-start justify-between gap-3">
@@ -93,12 +93,14 @@ export default function ItemDetailScreen() {
           </View>
 
           <Text className="mt-7 text-[16px] text-cocoa/40">Ingredients</Text>
-          <Text className="mt-1 text-[16px] leading-6 text-cocoa">{ingredients.join('  ')}</Text>
-
-          <Text className="mt-6 pb-4 text-xs leading-5 text-cocoa/35">
-            Made in a home kitchen that has not been inspected by the Michigan Department of
-            Agriculture & Rural Development
-          </Text>
+          <View className="mt-2 pb-4">
+            {ingredients.filter(Boolean).map((ingredient, index) => (
+              <View key={`${ingredient}-${index}`} className="flex-row items-start py-0.5">
+                <Text className="mr-2 text-[16px] leading-6 text-cocoa">•</Text>
+                <Text className="flex-1 text-[16px] leading-6 text-cocoa">{ingredient}</Text>
+              </View>
+            ))}
+          </View>
         </View>
       </ScrollView>
 
@@ -111,6 +113,10 @@ export default function ItemDetailScreen() {
             router.push('/box');
           }}
         />
+        <Text className="mt-3 text-center text-[10px] leading-4 text-cocoa/30">
+          Made in a home kitchen that has not been inspected by the Michigan Department of
+          Agriculture & Rural Development
+        </Text>
       </View>
     </View>
   );

@@ -4,6 +4,10 @@ import { Tabs } from 'expo-router';
 import { colors } from '@/constants/theme';
 import { useApp } from '@/context/AppContext';
 
+export const unstable_settings = {
+  initialRouteName: 'index',
+};
+
 export default function BuyerTabsLayout() {
   const { boxItems } = useApp();
   const boxCount = boxItems.reduce((sum, line) => sum + line.quantity, 0);
