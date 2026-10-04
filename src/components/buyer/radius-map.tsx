@@ -9,10 +9,18 @@ type RadiusMapProps = {
   radius: number;
 };
 
-const PIN_ICONS = ['storefront', 'nutrition', 'cafe', 'basket', 'ice-cream'] as const;
+const EXTRA_PINS = [
+  { x: -118, y: -72 },
+  { x: 96, y: -88 },
+  { x: -72, y: 102 },
+  { x: 124, y: 54 },
+  { x: -140, y: 18 },
+  { x: 38, y: -118 },
+  { x: 148, y: -24 },
+];
 
 export function RadiusMap({ makers, radius }: RadiusMapProps) {
-  const ring = 90 + (radius / 25) * 70;
+  const ring = 72 + (radius / 25) * 48;
 
   return (
     <View style={styles.canvas}>
@@ -30,14 +38,27 @@ export function RadiusMap({ makers, radius }: RadiusMapProps) {
         ]}
       />
 
+      {EXTRA_PINS.map((pin, index) => (
+        <View
+          key={`extra-${index}`}
+          style={[
+            styles.makerPin,
+            {
+              transform: [{ translateX: pin.x }, { translateY: pin.y }],
+            },
+          ]}>
+          <Ionicons name="location" size={9} color={colors.mint} />
+        </View>
+      ))}
+
       <View style={styles.homePin}>
-        <Ionicons name="home" size={12} color={colors.cream} />
+        <Ionicons name="home-outline" size={16} color={colors.mint} />
       </View>
 
-      {makers.slice(0, 5).map((maker, index) => {
+      {makers.slice(0, 10).map((maker, index) => {
         const angle = (index / Math.max(makers.length, 1)) * Math.PI * 2 - Math.PI / 2;
-        const distance = Math.min(maker.distance / radius, 0.92);
-        const offset = ring * (0.45 + distance * 0.45);
+        const distance = maker.distance / radius;
+        const offset = ring * (0.28 + Math.min(distance, 1.35) * 0.62);
         return (
           <View
             key={maker.id}
@@ -50,7 +71,7 @@ export function RadiusMap({ makers, radius }: RadiusMapProps) {
                 ],
               },
             ]}>
-            <Ionicons name={PIN_ICONS[index % PIN_ICONS.length]} size={11} color={colors.cream} />
+            <Ionicons name="location" size={9} color={colors.mint} />
           </View>
         );
       })}
@@ -60,46 +81,46 @@ export function RadiusMap({ makers, radius }: RadiusMapProps) {
 
 const styles = StyleSheet.create({
   canvas: {
-    height: 280,
+    height: 260,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
-    backgroundColor: colors.map,
+    backgroundColor: colors.mint,
   },
   road: {
     position: 'absolute',
-    height: 6,
+    height: 2,
     width: '140%',
-    backgroundColor: '#D5DDD2',
+    backgroundColor: '#FFFFFF',
   },
   roadA: {
-    transform: [{ rotate: '28deg' }],
+    transform: [{ rotate: '18deg' }],
   },
   roadB: {
-    transform: [{ rotate: '-38deg' }],
+    transform: [{ rotate: '-72deg' }],
   },
   ring: {
     borderWidth: 2,
-    borderStyle: 'dashed',
-    borderColor: colors.sage,
+    borderColor: colors.dark,
     backgroundColor: 'transparent',
   },
   homePin: {
     position: 'absolute',
-    height: 28,
-    width: 28,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.gold,
-  },
-  makerPin: {
-    position: 'absolute',
-    height: 26,
-    width: 26,
-    borderRadius: 13,
+    height: 36,
+    width: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.dark,
+    zIndex: 2,
+  },
+  makerPin: {
+    position: 'absolute',
+    height: 18,
+    width: 18,
+    borderRadius: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.sage,
   },
 });
