@@ -475,6 +475,86 @@ export const forecasts: Record<string, Forecast> = {
   },
 };
 
+export type BoxCadence = 'one-time' | 'weekly';
+export type PickupWindow = '9-10' | '10-11' | '11-12';
+export type OrderStatus = 'Confirmed' | 'Being made' | 'Ready for pickup' | 'Picked up';
+
+export type OrderLine = {
+  itemId: string;
+  quantity: number;
+};
+
+export type Order = {
+  id: string;
+  status: OrderStatus;
+  items: OrderLine[];
+  spotId: string;
+  window: PickupWindow;
+  cadence: BoxCadence;
+  total: number;
+};
+
+export const lastWeekBox: OrderLine[] = [
+  { itemId: 'item-country-sourdough', quantity: 1 },
+  { itemId: 'item-strawberry-rhubarb', quantity: 2 },
+  { itemId: 'item-classic-cluster', quantity: 1 },
+  { itemId: 'item-brown-butter-chip', quantity: 1 },
+];
+
+export const pickupWindows: { id: PickupWindow; label: string; spoken: string }[] = [
+  { id: '9-10', label: 'Sat 9-10', spoken: 'Saturday 9-10am' },
+  { id: '10-11', label: 'Sat 10-11', spoken: 'Saturday 10-11am' },
+  { id: '11-12', label: 'Sat 11-12', spoken: 'Saturday 11am-12pm' },
+];
+
+export const mockOrders: Order[] = [
+  {
+    id: 'order-confirmed',
+    status: 'Confirmed',
+    items: [
+      { itemId: 'item-maple-sandwich-loaf', quantity: 1 },
+      { itemId: 'item-peach-vanilla', quantity: 1 },
+    ],
+    spotId: 'spot-kerrytown-market',
+    window: '10-11',
+    cadence: 'one-time',
+    total: 20,
+  },
+  {
+    id: 'order-being-made',
+    status: 'Being made',
+    items: [
+      { itemId: 'item-cinnamon-swirl', quantity: 1 },
+      { itemId: 'item-salted-tahini', quantity: 2 },
+    ],
+    spotId: 'spot-aadl-downtown',
+    window: '9-10',
+    cadence: 'weekly',
+    total: 28,
+  },
+  {
+    id: 'order-ready',
+    status: 'Ready for pickup',
+    items: [{ itemId: 'item-wildflower-honey', quantity: 1 }],
+    spotId: 'spot-aapd-exchange',
+    window: '11-12',
+    cadence: 'one-time',
+    total: 14,
+  },
+  {
+    id: 'order-picked-up',
+    status: 'Picked up',
+    items: [
+      { itemId: 'item-lavender-shortbread', quantity: 1 },
+      { itemId: 'item-blackberry-sage', quantity: 1 },
+    ],
+    spotId: 'spot-argus-cafe',
+    window: '10-11',
+    cadence: 'one-time',
+    total: 21,
+  },
+];
+
 export function getMaker(id: string) {
   return makers.find((maker) => maker.id === id);
 }
@@ -485,4 +565,12 @@ export function getItem(id: string) {
 
 export function getForecast(itemId: string) {
   return forecasts[itemId];
+}
+
+export function getMeetupSpot(id: string) {
+  return meetupSpots.find((spot) => spot.id === id);
+}
+
+export function getItemsByMaker(makerId: string) {
+  return items.filter((item) => item.maker_id === makerId);
 }

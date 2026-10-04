@@ -1,10 +1,12 @@
 import { Platform } from 'react-native';
 
 export const colors = {
-  cream: '#FFF8F0',
-  terracotta: '#C65D3B',
-  sage: '#7A9E7E',
-  dark: '#2B2118',
+  cream: '#F6F2EA',
+  terracotta: '#C56B4A',
+  sage: '#2F6B3A',
+  dark: '#16301C',
+  gold: '#D4A017',
+  map: '#E6EEE3',
 } as const;
 
 /** Tailwind `rounded-2xl` — 1rem / 16px */
@@ -14,16 +16,16 @@ export const Colors = {
   light: {
     text: colors.dark,
     background: colors.cream,
-    backgroundElement: '#F3E6D8',
-    backgroundSelected: '#E8D4C4',
-    textSecondary: '#6B5A4C',
+    backgroundElement: '#EDE7DC',
+    backgroundSelected: '#E2D8C8',
+    textSecondary: '#5C6B5C',
   },
   dark: {
     text: colors.cream,
     background: colors.dark,
-    backgroundElement: '#3D3228',
-    backgroundSelected: '#4A3E32',
-    textSecondary: '#C4B5A5',
+    backgroundElement: '#1F3A26',
+    backgroundSelected: '#2A4A32',
+    textSecondary: '#C5D0C4',
   },
 } as const;
 
