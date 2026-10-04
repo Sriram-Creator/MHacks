@@ -121,6 +121,33 @@ export function fetchForecast(itemId: string) {
   return getJson<ServerForecast>(`/forecast/${itemId}`);
 }
 
+/** Same Cottage AI replies as fetch_agent/agent.py (via the Express server). */
+export async function askCottageAgent(question: string): Promise<string> {
+  const res = await fetch(`${API_URL}/ai/agent`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ question }),
+  });
+  const text = await res.text();
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error(text || `Request failed (${res.status})`);
+  }
+  if (!res.ok) {
+    const message =
+      typeof data === 'object' && data && 'error' in data
+        ? String((data as { error: unknown }).error)
+        : `Request failed (${res.status})`;
+    throw new Error(message);
+  }
+  if (typeof data === 'object' && data && 'answer' in data) {
+    return String((data as { answer: unknown }).answer);
+  }
+  throw new Error('Agent returned no answer');
+}
+
 export function fetchMeetupSpots() {
   return getJson<ServerMeetupSpot[]>('/meetup-spots');
 }
