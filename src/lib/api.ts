@@ -1,4 +1,5 @@
 import { API_URL } from '@/constants/config';
+import { cottageAgentReply } from '@/lib/cottageAgent';
 import {
   forecasts,
   getItem,
@@ -244,6 +245,25 @@ export async function createItem(input: NewItemInput): Promise<ServerItem> {
 
 export function fetchForecast(itemId: string) {
   return getJson<ServerForecast>(`/forecast/${itemId}`, mockForecast(itemId));
+}
+
+/** Same replies as fetch_agent/agent.py. Tries Kod's server; falls back locally (main has no /ai/agent). */
+export async function askCottageAgent(question: string): Promise<string> {
+  try {
+    const res = await fetch(`${API_URL}/ai/agent`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question }),
+    });
+    const text = await res.text();
+    const data: unknown = JSON.parse(text);
+    if (res.ok && typeof data === 'object' && data && 'answer' in data) {
+      return String((data as { answer: unknown }).answer);
+    }
+  } catch {
+    // Venue Wi-Fi or main server without this route — use bundled agent replies.
+  }
+  return cottageAgentReply(question);
 }
 
 export function fetchMeetupSpots() {

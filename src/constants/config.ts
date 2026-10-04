@@ -1,3 +1,4 @@
+export const API_URL = 'http://10.165.0.191:3001';
 import Constants from 'expo-constants';
 
 const FALLBACK_API_URL = 'http://10.165.0.191:3001';

@@ -1,8 +1,23 @@
 import { Router } from "express";
+import { cottageAgentReply } from "../cottageAgent.js";
 import { generateListing, isMockMode } from "../vision.js";
 import { checkLegality } from "../rules.js";
 
 export const aiRouter = Router();
+
+/**
+ * POST /ai/agent
+ * Body: { question: string }
+ * Same replies as fetch_agent/agent.py / the Agentverse agent.
+ */
+aiRouter.post("/agent", (req, res) => {
+  const question = req.body?.question;
+  if (typeof question !== "string" || question.trim().length === 0) {
+    return res.status(400).json({ error: "Missing required field: question" });
+  }
+  const answer = cottageAgentReply(question);
+  return res.json({ answer, status: "ok" });
+});
 
 /**
  * POST /ai/listing
