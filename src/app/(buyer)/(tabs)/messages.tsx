@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -13,6 +13,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { ConversationRow } from '@/components/buyer/conversation-row';
+import { LawBanner } from '@/components/buyer/law-banner';
+import { lastMessage, mockConversations } from '@/components/buyer/mock-conversations';
 import { colors } from '@/constants/theme';
 import { getMaker, makers } from '@/data/mock';
 
@@ -52,12 +55,83 @@ function seedThread(makerName: string): ChatMessage[] {
 
 export default function MessagesScreen() {
   const { makerId } = useLocalSearchParams<{ makerId?: string }>();
-  const maker = getMaker(typeof makerId === 'string' ? makerId : '') ?? makers[0];
+  const [readMakerIds, setReadMakerIds] = useState<Set<string>>(() => new Set());
+  const hasMakerParam = typeof makerId === 'string' && makerId.length > 0;
+  const maker = hasMakerParam ? (getMaker(makerId) ?? makers[0]) : undefined;
 
-  return <MakerChat key={maker.id} maker={maker} />;
+  function markRead(id: string) {
+    setReadMakerIds((current) => (current.has(id) ? current : new Set(current).add(id)));
+  }
+
+  if (!maker) {
+    return (
+      <Inbox
+        readMakerIds={readMakerIds}
+        onOpen={(id) => {
+          markRead(id);
+          router.setParams({ makerId: id });
+        }}
+      />
+    );
+  }
+
+  return (
+    <MakerChat
+      key={maker.id}
+      maker={maker}
+      onBack={() => {
+        markRead(maker.id);
+        router.setParams({ makerId: undefined });
+      }}
+    />
+  );
 }
 
-function MakerChat({ maker }: { maker: NonNullable<ReturnType<typeof getMaker>> }) {
+function Inbox({
+  readMakerIds,
+  onOpen,
+}: {
+  readMakerIds: Set<string>;
+  onOpen: (makerId: string) => void;
+}) {
+  const rows = useMemo(
+    () =>
+      mockConversations
+        .flatMap((conversation) => {
+          const maker = getMaker(conversation.makerId);
+          return maker ? [{ conversation, maker }] : [];
+        })
+        .sort(
+          (a, b) =>
+            new Date(lastMessage(b.conversation).sentAt).getTime() -
+            new Date(lastMessage(a.conversation).sentAt).getTime(),
+        ),
+    [],
+  );
+
+  return (
+    <ScrollView className="flex-1 bg-cream" contentContainerClassName="pb-6">
+      {rows.map(({ conversation, maker }) => (
+        <View key={conversation.id} className="border-b border-savor/5">
+          <ConversationRow
+            conversation={conversation}
+            maker={maker}
+            unread={conversation.unread && !readMakerIds.has(maker.id)}
+            onPress={() => onOpen(maker.id)}
+          />
+        </View>
+      ))}
+    </ScrollView>
+  );
+}
+
+function MakerChat({
+  maker,
+  onBack,
+}: {
+  maker: NonNullable<ReturnType<typeof getMaker>>;
+  onBack: () => void;
+}) {
   const [draft, setDraft] = useState('');
   const [thread, setThread] = useState<ChatMessage[]>(() => seedThread(maker.name));
   const inputRef = useRef<TextInput>(null);
@@ -89,6 +163,14 @@ function MakerChat({ maker }: { maker: NonNullable<ReturnType<typeof getMaker>> 
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
         keyboardVerticalOffset={8}>
         <View className="flex-row items-center border-b border-savor/5 px-5 py-3">
+          <Pressable
+            onPress={onBack}
+            accessibilityRole="button"
+            accessibilityLabel="Back to inbox"
+            hitSlop={8}
+            className="-ml-2 mr-1 h-10 w-10 items-center justify-center">
+            <Ionicons name="chevron-back" size={24} color={colors.dark} />
+          </Pressable>
           <Image source={maker.photo} contentFit="cover" className="h-10 w-10 rounded-full" />
           <View className="ml-3 flex-1">
             <Text className="text-base font-semibold text-savor">{maker.name}</Text>
@@ -96,6 +178,8 @@ function MakerChat({ maker }: { maker: NonNullable<ReturnType<typeof getMaker>> 
           </View>
           <Ionicons name="call-outline" size={20} color={colors.dark} />
         </View>
+
+        <LawBanner />
 
         <ScrollView
           ref={listRef}
