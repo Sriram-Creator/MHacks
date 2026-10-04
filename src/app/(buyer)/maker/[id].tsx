@@ -26,16 +26,18 @@ export default function MakerProfileScreen() {
     );
   }
 
+  const selectedMaker = maker;
+
   function onAction(key: string) {
     if (key === 'chat') {
-      router.push('/messages');
+      router.push({ pathname: '/messages', params: { makerId: selectedMaker.id } });
       return;
     }
     if (key === 'call') {
       Linking.openURL('tel:7345550148');
       return;
     }
-    Linking.openURL(`mailto:hello@${maker!.id.replace('maker-', '')}.savor`);
+    Linking.openURL(`mailto:hello@${selectedMaker.id.replace('maker-', '')}.savor`);
   }
 
   return (

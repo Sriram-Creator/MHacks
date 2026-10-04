@@ -8,9 +8,9 @@ export const aiRouter = Router();
  * POST /ai/listing
  * Body: { image?: string (base64 or data URL), state: string, hint?: string }
  *
- * In MOCK mode (MOCK_AI=true or no GEMINI_API_KEY) the image is optional and a
+ * In MOCK mode (MOCK_AI=true or no NVIDIA_API_KEY) the image is optional and a
  * hardcoded listing is returned based on `hint`. In LIVE mode the image is
- * required and sent to the Gemini vision API. Either way the real legality
+ * required and sent to NVIDIA NIM's vision API. Either way the real legality
  * check runs on the result.
  *
  * Returns: { ...listing, legality, mode }
