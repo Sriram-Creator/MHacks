@@ -58,17 +58,22 @@ Join our community of developers creating universal apps.
 
 ## Fetch.ai Agent (ASI:One Challenge)
 
-Deployed agent code: fetch_agent/agent.py (hosted on Agentverse)
-Agent name: michigan-cottage-compliance (@michigan-cottage-com)
-Agent address: PASTE agent1q... ADDRESS
-Profile: PASTE PROFILE URL
-
-Checks Michigan cottage food rules, forecasts bake quantities, and orders
-local food boxes through ASI:One chat. It uses a saved snapshot of the Savor
-catalog and generates mock order IDs.
-
-How to test: open the profile above, click Chat with Agent, and send
-"nut-free breakfast box under $30".
-
 ![tag:innovationlab](https://img.shields.io/badge/innovationlab-3D8BD3)
 ![tag:hackathon](https://img.shields.io/badge/hackathon-5F43F1)
+
+Hosted agent code: [`fetch_agent/agent.py`](fetch_agent/agent.py) (Agentverse editor). This is the only agent to use for judging, Devpost, and the ASI:One Submission Agent. Do not use `@cottage-ai`.
+
+- **Agent name:** michigan-cottage-compliance
+- **Handle:** `@michigan-cottage-com`
+- **Address:** `agent1qfp4fke569p8elfchcezp2asr9zq9vvwcpq89d5nn7yfzatnag3kj3kw5c2`
+- **Profile:** https://agentverse.ai/agents/details/agent1qfp4fke569p8elfchcezp2asr9zq9vvwcpq89d5nn7yfzatnag3kj3kw5c2/profile
+
+In ASI:One chat, tag `@michigan-cottage-com` and send:
+
+1. `Can I sell pickles in Michigan?` — legal check (NO)
+2. `How much sourdough should I make?` — forecast (`List 40: ...`)
+3. `nut-free breakfast box under $30` — mock box order (sourdough, jam, honey, pickup, `ORD-xxxxxx`)
+
+The catalog, prices, allergens, stock, and pickup spots are a hardcoded snapshot. Stock does not decrease, order IDs are random, and nothing is sent to the Savor server. The forecast is a fixed message; the legal check is a keyword list.
+
+If the first message has no reply, send a throwaway warmup message first (cold start). Do not restart or edit the hosted agent before judging.
