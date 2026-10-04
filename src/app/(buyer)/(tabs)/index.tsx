@@ -84,6 +84,7 @@ export default function HomeScreen() {
         <BrandHeader
           searching={searching}
           onSearchPress={() => setSearching((open) => !open)}
+          onRadiusPress={() => setSearching((open) => !open)}
           radiusMiles={radius}
         />
         {!listView ? <RadiusMap makers={nearbyMakers} radius={radius} /> : null}
