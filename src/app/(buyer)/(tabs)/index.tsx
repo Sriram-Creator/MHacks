@@ -36,7 +36,7 @@ function makerSpecialty(makerId: string) {
 
 export default function HomeScreen() {
   const [query, setQuery] = useState('');
-  const [radius, setRadius] = useState<5 | 10 | 25>(10);
+  const [radius, setRadius] = useState(10);
   const [category, setCategory] = useState<ItemCategory | null>(null);
   const [searching, setSearching] = useState(false);
   const [listView, setListView] = useState(false);
@@ -109,32 +109,45 @@ export default function HomeScreen() {
         </SafeAreaView>
       )}
 
+      {searching ? (
+        <View className="bg-cream pt-4">
+          <SearchBar value={query} onChangeText={setQuery} />
+          <View className="mt-3">
+            <ChipRow>
+              {categories.map((option) => (
+                <Chip
+                  key={option.value}
+                  label={option.label}
+                  selected={category === option.value}
+                  onPress={() =>
+                    setCategory((current) => (current === option.value ? null : option.value))
+                  }
+                />
+              ))}
+            </ChipRow>
+          </View>
+        </View>
+      ) : null}
+
+      <View className="bg-cream px-5 pt-5">
+        <Text className="text-[11px] font-semibold uppercase tracking-[1.4px] text-savor/35">
+          Search radius
+        </Text>
+        <View className="mt-2 flex-row items-end justify-between">
+          <Text className="text-[40px] font-semibold leading-[44px] text-savor">{radius} miles</Text>
+          <Text className="mb-1 text-sm text-savor/40">{nearbyMakers.length} makers nearby</Text>
+        </View>
+        <View className="mt-3">
+          <RadiusSlider value={radius} onChange={setRadius} />
+        </View>
+      </View>
+
       <ScrollView
         className="flex-1 bg-cream"
         contentContainerClassName="pb-10"
         keyboardShouldPersistTaps="handled">
-        {searching ? (
-          <View className="pt-4">
-            <SearchBar value={query} onChangeText={setQuery} />
-            <View className="mt-3">
-              <ChipRow>
-                {categories.map((option) => (
-                  <Chip
-                    key={option.value}
-                    label={option.label}
-                    selected={category === option.value}
-                    onPress={() =>
-                      setCategory((current) => (current === option.value ? null : option.value))
-                    }
-                  />
-                ))}
-              </ChipRow>
-            </View>
-          </View>
-        ) : null}
-
         {listView && featured && featuredItem ? (
-          <View className="px-5 pt-2">
+          <View className="px-5 pt-4">
             <Text className="text-[11px] font-semibold uppercase tracking-[1.4px] text-savor/35">
               {nearbyMakers.length} featured within {radius} miles
             </Text>
@@ -157,24 +170,9 @@ export default function HomeScreen() {
               </View>
             </Pressable>
           </View>
-        ) : (
-          <View className="px-5 pt-6">
-            <Text className="text-[11px] font-semibold uppercase tracking-[1.4px] text-savor/35">
-              Search radius
-            </Text>
-            <View className="mt-2 flex-row items-end justify-between">
-              <Text className="text-[40px] font-semibold leading-[44px] text-savor">
-                {radius} miles
-              </Text>
-              <Text className="mb-1 text-sm text-savor/40">{nearbyMakers.length} makers nearby</Text>
-            </View>
-            <View className="mt-4">
-              <RadiusSlider value={radius} onChange={setRadius} />
-            </View>
-          </View>
-        )}
+        ) : null}
 
-        <View className="mt-8 flex-row items-end justify-between px-5">
+        <View className="mt-6 flex-row items-end justify-between px-5">
           <View className="flex-1 pr-4">
             <Text className="text-[11px] font-semibold uppercase tracking-[1.4px] text-savor/35">
               {listView ? 'Open this week' : `Within ${radius} miles`}
